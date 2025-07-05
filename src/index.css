@@ -6,22 +6,22 @@
 
 @layer base {
   :root {
-    --background: 0 0 0; /* Pure black */
+    --background: 0 0% 0%; /* Pure black */
     --foreground: 248 250 252;
 
-    --card: 16 25 24; /* #101918 */
+    --card: 0 0% 0%; /* Pure black */
     --card-foreground: 248 250 252;
 
-    --popover: 16 25 24;
+    --popover: 0 0% 0%; /* Pure black */
     --popover-foreground: 248 250 252;
 
     --primary: 34 197 94; /* #22c55e */
     --primary-foreground: 0 0 0;
 
-    --secondary: 20 30 28;
+    --secondary: 0 0% 0%; /* Pure black */
     --secondary-foreground: 248 250 252;
 
-    --muted: 20 30 28;
+    --muted: 0 0% 0%; /* Pure black */
     --muted-foreground: 156 163 175;
 
     --accent: 74 222 128; /* #4ade80 */
@@ -30,19 +30,19 @@
     --destructive: 239 68 68;
     --destructive-foreground: 248 250 252;
 
-    --border: 31 41 55;
-    --input: 31 41 55;
+    --border: 142 71% 45%; /* Green border */
+    --input: 0 0% 0%; /* Pure black */
     --ring: 34 197 94;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0 0;
+    --sidebar-background: 0 0% 0%; /* Pure black */
     --sidebar-foreground: 248 250 252;
     --sidebar-primary: 34 197 94;
     --sidebar-primary-foreground: 0 0 0;
-    --sidebar-accent: 20 30 28;
+    --sidebar-accent: 0 0% 0%; /* Pure black */
     --sidebar-accent-foreground: 248 250 252;
-    --sidebar-border: 31 41 55;
+    --sidebar-border: 142 71% 45%; /* Green border */
     --sidebar-ring: 34 197 94;
   }
 }
@@ -54,7 +54,7 @@
 
   body {
     @apply text-foreground font-['Inter',sans-serif];
-    background: linear-gradient(135deg, #000000 0%, #0a0f0a 25%, #0f1f0f 50%, #1a2e1a 75%, #22c55e 100%);
+    background: linear-gradient(135deg, #000000 0%, #001a00 25%, #003300 50%, #004d00 75%, #22c55e 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -62,7 +62,7 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-lg border border-white/10;
+    @apply bg-black/90 backdrop-blur-lg border border-green-500/30;
   }
   
   .glow-green {

@@ -18,7 +18,7 @@ const Dashboard = () => {
       </div>
 
       {/* Status Card */}
-      <Card className="glass-card p-6 border-green-500/30 glow-green">
+      <Card className="bg-black border border-green-500/50 glow-green p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse-green"></div>
