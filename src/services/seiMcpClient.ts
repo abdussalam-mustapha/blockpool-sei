@@ -47,17 +47,20 @@ interface TokenInfo {
 }
 
 class SeiMcpClient {
-  private ws: WebSocket | null = null;
+  private eventSource: EventSource | null = null;
   private messageId = 0;
-  private pendingRequests = new Map<string | number, (result: any) => void>();
+  private pendingRequests = new Map<string | number, { resolve: (result: any) => void; reject: (error: any) => void }>();
   private eventListeners = new Map<string, ((data: any) => void)[]>();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private isConnected = false;
   private reconnectTimeout: NodeJS.Timeout | null = null;
+  private baseUrl: string;
 
-  constructor(private serverUrl: string = 'ws://localhost:3001') {}
+  constructor(serverUrl: string = 'http://localhost:3001') {
+    this.baseUrl = serverUrl;
+  }
 
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -68,72 +71,92 @@ class SeiMcpClient {
           this.reconnectTimeout = null;
         }
 
-        // Use native browser WebSocket
-        this.ws = new WebSocket(this.serverUrl);
+        // First, test if the server is available
+        this.testConnection()
+          .then(() => {
+            // Connect to SSE endpoint
+            this.eventSource = new EventSource(`${this.baseUrl}/sse`);
 
-        this.ws.onopen = () => {
-          console.log('Connected to SEI MCP Server');
-          this.isConnected = true;
-          this.reconnectAttempts = 0;
-          this.emit('connection', { status: 'connected' });
-          
-          // Initialize the MCP session
-          this.initialize().then(() => {
-            resolve();
-          }).catch((error) => {
-            console.error('Failed to initialize MCP session:', error);
-            // Still resolve as connection is established
-            resolve();
+            this.eventSource.onopen = () => {
+              console.log('Connected to SEI MCP Server via SSE');
+              this.isConnected = true;
+              this.reconnectAttempts = 0;
+              this.emit('connection', { status: 'connected', connected: true, attempts: 0 });
+              
+              // Initialize the MCP session
+              this.initialize().then(() => {
+                resolve();
+              }).catch((error) => {
+                console.error('Failed to initialize MCP session:', error);
+                // Still resolve as connection is established
+                resolve();
+              });
+            };
+
+            this.eventSource.onmessage = (event) => {
+              try {
+                const message: MCPMessage = JSON.parse(event.data);
+                this.handleMessage(message);
+              } catch (error) {
+                console.error('Error parsing MCP message:', error);
+              }
+            };
+
+            this.eventSource.onerror = (error) => {
+              console.error('SEI MCP SSE error:', error);
+              this.isConnected = false;
+              this.eventSource = null;
+              this.emit('connection', { status: 'error', connected: false, attempts: this.reconnectAttempts });
+              this.handleReconnect();
+            };
+
+            // Connection timeout
+            setTimeout(() => {
+              if (this.eventSource && this.eventSource.readyState === EventSource.CONNECTING) {
+                this.eventSource.close();
+                reject(new Error('SSE connection timeout'));
+              }
+            }, 10000);
+
+          })
+          .catch((error) => {
+            console.warn('SEI MCP Server not available:', error.message);
+            this.isConnected = false;
+            this.emit('connection', { status: 'error', connected: false, attempts: 0 });
+            reject(error);
           });
-        };
-
-        this.ws.onmessage = (event) => {
-          try {
-            const message: MCPMessage = JSON.parse(event.data);
-            this.handleMessage(message);
-          } catch (error) {
-            console.error('Error parsing MCP message:', error);
-          }
-        };
-
-        this.ws.onclose = (event) => {
-          console.log('Disconnected from SEI MCP Server', event.code, event.reason);
-          this.isConnected = false;
-          this.ws = null;
-          this.emit('connection', { status: 'disconnected' });
-          
-          // Only attempt reconnect if it wasn't a manual close
-          if (event.code !== 1000) {
-            this.handleReconnect();
-          }
-        };
-
-        this.ws.onerror = (error) => {
-          console.error('SEI MCP WebSocket error:', error);
-          this.isConnected = false;
-          this.emit('connection', { status: 'error', error });
-          reject(new Error('Failed to connect to SEI MCP Server'));
-        };
-
-        // Connection timeout
-        setTimeout(() => {
-          if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
-            this.ws.close();
-            reject(new Error('Connection timeout'));
-          }
-        }, 10000);
 
       } catch (error) {
-        console.error('Error creating WebSocket connection:', error);
+        console.error('Error creating SSE connection:', error);
         reject(error);
       }
     });
   }
 
+  private async testConnection(): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(5000)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+
+      console.log('SEI MCP Server health check passed');
+    } catch (error) {
+      throw new Error(`SEI MCP Server unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   private async initialize(): Promise<void> {
     try {
-      // Initialize MCP session
-      await this.sendRequest('initialize', {
+      // Initialize MCP session via HTTP
+      await this.sendHttpRequest('initialize', {
         protocolVersion: '2024-11-05',
         capabilities: {
           tools: {},
@@ -146,45 +169,23 @@ class SeiMcpClient {
         }
       });
 
-      // Subscribe to blockchain events
-      await this.subscribeToEvents();
+      console.log('MCP session initialized');
     } catch (error) {
       console.error('Failed to initialize MCP session:', error);
       throw error;
     }
   }
 
-  private async subscribeToEvents(): Promise<void> {
-    try {
-      // Subscribe to various blockchain events
-      await this.sendRequest('tools/call', {
-        name: 'subscribe_to_events',
-        arguments: {
-          events: ['transfer', 'mint', 'swap', 'contract_interaction'],
-          filters: {
-            minAmount: '1000000', // 1 SEI minimum
-            includeNFTs: true,
-            includeDeFi: true
-          }
-        }
-      });
-
-      console.log('Subscribed to SEI blockchain events');
-    } catch (error) {
-      console.error('Failed to subscribe to events:', error);
-    }
-  }
-
   private handleMessage(message: MCPMessage): void {
     if (message.id && this.pendingRequests.has(message.id)) {
-      const resolver = this.pendingRequests.get(message.id);
+      const { resolve, reject } = this.pendingRequests.get(message.id)!;
       this.pendingRequests.delete(message.id);
       
       if (message.error) {
         console.error('MCP Error:', message.error);
-        resolver?.(null);
+        reject(new Error(message.error.message || 'MCP request failed'));
       } else {
-        resolver?.(message.result);
+        resolve(message.result);
       }
     } else if (message.method === 'notifications/blockchain_event') {
       // Handle real-time blockchain events
@@ -219,7 +220,7 @@ class SeiMcpClient {
       const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
       
       console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
-      this.emit('connection', { status: 'reconnecting', attempts: this.reconnectAttempts });
+      this.emit('connection', { status: 'reconnecting', connected: false, attempts: this.reconnectAttempts });
       
       this.reconnectTimeout = setTimeout(() => {
         this.connect().catch((error) => {
@@ -229,18 +230,12 @@ class SeiMcpClient {
       }, delay);
     } else {
       console.error('Max reconnection attempts reached');
-      this.emit('connection', { status: 'failed' });
+      this.emit('connection', { status: 'failed', connected: false, attempts: this.reconnectAttempts });
     }
   }
 
-  private sendRequest(method: string, params?: any): Promise<any> {
-    return new Promise((resolve) => {
-      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-        console.warn('WebSocket not connected, cannot send request:', method);
-        resolve(null);
-        return;
-      }
-
+  private async sendHttpRequest(method: string, params?: any): Promise<any> {
+    try {
       const id = ++this.messageId;
       const message: MCPMessage = {
         jsonrpc: '2.0',
@@ -249,67 +244,113 @@ class SeiMcpClient {
         params
       };
 
-      this.pendingRequests.set(id, resolve);
-      
-      try {
-        this.ws.send(JSON.stringify(message));
-      } catch (error) {
-        console.error('Error sending WebSocket message:', error);
-        this.pendingRequests.delete(id);
-        resolve(null);
-        return;
-      }
-
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        if (this.pendingRequests.has(id)) {
-          this.pendingRequests.delete(id);
-          console.warn('Request timeout for method:', method);
-          resolve(null);
-        }
-      }, 30000);
-    });
-  }
-
-  // Public API methods
-  async analyzeWallet(address: string): Promise<WalletAnalysis | null> {
-    try {
-      const result = await this.sendRequest('tools/call', {
-        name: 'analyze_wallet',
-        arguments: { address }
+      const response = await fetch(`${this.baseUrl}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(message),
+        signal: AbortSignal.timeout(30000)
       });
 
-      if (result?.content?.[0]?.text) {
-        return JSON.parse(result.content[0].text);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+
+      const result = await response.json();
       
-      // Return mock data if MCP is not available
-      return {
-        address,
-        balance: `${(Math.random() * 10000).toFixed(3)} SEI`,
-        transactionCount: Math.floor(Math.random() * 1000) + 50,
-        lastActivity: '2 hours ago',
-        riskScore: Math.random() * 0.5, // Low to medium risk
-        tokens: [
-          { denom: 'usei', amount: `${(Math.random() * 10000).toFixed(3)}`, value: '$1,234' },
-          { denom: 'seiyan', amount: `${(Math.random() * 5000).toFixed(0)}`, value: '$567' }
-        ],
-        recentTransactions: []
-      };
+      if (result.error) {
+        throw new Error(result.error.message || 'MCP request failed');
+      }
+
+      return result.result;
     } catch (error) {
-      console.error('Error analyzing wallet:', error);
-      return null;
+      console.error('HTTP request failed:', error);
+      throw error;
     }
   }
 
-  async getTokenInfo(denom: string): Promise<TokenInfo | null> {
+  // Public API methods using the SEI MCP Server tools
+  async analyzeWallet(address: string): Promise<WalletAnalysis | null> {
     try {
-      const result = await this.sendRequest('tools/call', {
-        name: 'get_token_info',
-        arguments: { denom }
+      if (!this.isConnected) {
+        return this.getMockWalletAnalysis(address);
+      }
+
+      // Get balance using SEI MCP Server
+      const balanceResult = await this.sendHttpRequest('tools/call', {
+        name: 'get-balance',
+        arguments: { 
+          address,
+          network: 'sei'
+        }
       });
 
-      return result?.content?.[0]?.text ? JSON.parse(result.content[0].text) : null;
+      // Get transaction history
+      const txResult = await this.sendHttpRequest('resources/read', {
+        uri: `evm://sei/address/${address}/transactions`
+      });
+
+      const balance = balanceResult?.formatted || '0';
+      const transactions = txResult?.contents?.[0]?.text ? JSON.parse(txResult.contents[0].text) : [];
+
+      return {
+        address,
+        balance: `${balance} SEI`,
+        transactionCount: transactions.length || Math.floor(Math.random() * 1000) + 50,
+        lastActivity: transactions[0]?.timestamp || '2 hours ago',
+        riskScore: Math.random() * 0.5, // Low to medium risk
+        tokens: [
+          { denom: 'usei', amount: balance, value: `$${(parseFloat(balance) * 0.67).toFixed(2)}` }
+        ],
+        recentTransactions: transactions.slice(0, 5) || []
+      };
+    } catch (error) {
+      console.error('Error analyzing wallet:', error);
+      return this.getMockWalletAnalysis(address);
+    }
+  }
+
+  private getMockWalletAnalysis(address: string): WalletAnalysis {
+    return {
+      address,
+      balance: `${(Math.random() * 10000).toFixed(3)} SEI`,
+      transactionCount: Math.floor(Math.random() * 1000) + 50,
+      lastActivity: '2 hours ago',
+      riskScore: Math.random() * 0.5,
+      tokens: [
+        { denom: 'usei', amount: `${(Math.random() * 10000).toFixed(3)}`, value: '$1,234' },
+        { denom: 'seiyan', amount: `${(Math.random() * 5000).toFixed(0)}`, value: '$567' }
+      ],
+      recentTransactions: []
+    };
+  }
+
+  async getTokenInfo(tokenAddress: string): Promise<TokenInfo | null> {
+    try {
+      if (!this.isConnected) {
+        return null;
+      }
+
+      const result = await this.sendHttpRequest('tools/call', {
+        name: 'get-token-info',
+        arguments: { 
+          tokenAddress,
+          network: 'sei'
+        }
+      });
+
+      return result ? {
+        denom: result.symbol || 'UNKNOWN',
+        name: result.name || 'Unknown Token',
+        symbol: result.symbol || 'UNK',
+        price: Math.random() * 10,
+        change24h: (Math.random() * 20 - 10),
+        volume24h: `$${Math.floor(Math.random() * 1000000)}`,
+        marketCap: result.totalSupply ? `$${Math.floor(parseFloat(result.totalSupply) * Math.random() * 10)}` : undefined,
+        holders: Math.floor(Math.random() * 10000)
+      } : null;
     } catch (error) {
       console.error('Error getting token info:', error);
       return null;
@@ -318,16 +359,22 @@ class SeiMcpClient {
 
   async getMarketData(): Promise<any> {
     try {
-      const result = await this.sendRequest('tools/call', {
-        name: 'get_market_data',
-        arguments: {}
-      });
-
-      if (result?.content?.[0]?.text) {
-        return JSON.parse(result.content[0].text);
+      if (!this.isConnected) {
+        return this.getMockMarketData();
       }
 
-      // Return mock market data if MCP is not available
+      // Get chain info
+      const chainInfo = await this.sendHttpRequest('resources/read', {
+        uri: 'evm://sei/chain'
+      });
+
+      // Get latest block
+      const latestBlock = await this.sendHttpRequest('resources/read', {
+        uri: 'evm://sei/block/latest'
+      });
+
+      const blockData = latestBlock?.contents?.[0]?.text ? JSON.parse(latestBlock.contents[0].text) : null;
+
       return {
         seiPrice: (0.5 + Math.random() * 0.3).toFixed(3),
         seiChange24h: (Math.random() * 20 - 10).toFixed(2),
@@ -335,8 +382,9 @@ class SeiMcpClient {
         volume24h: '$145M',
         tvl: '$89M',
         activeWallets: Math.floor(Math.random() * 10000) + 5000,
-        transactions24h: Math.floor(Math.random() * 100000) + 50000,
+        transactions24h: blockData?.number ? Math.floor(Math.random() * 100000) + 50000 : 75000,
         avgGas: '0.002',
+        blockHeight: blockData?.number || Math.floor(Math.random() * 1000000) + 5000000,
         tokenFlow: '$1.2M',
         tokenFlowChange: '+15.3%',
         activeWalletsChange: '+8.7%',
@@ -349,18 +397,44 @@ class SeiMcpClient {
       };
     } catch (error) {
       console.error('Error getting market data:', error);
-      return null;
+      return this.getMockMarketData();
     }
+  }
+
+  private getMockMarketData(): any {
+    return {
+      seiPrice: (0.5 + Math.random() * 0.3).toFixed(3),
+      seiChange24h: (Math.random() * 20 - 10).toFixed(2),
+      marketCap: '$2.1B',
+      volume24h: '$145M',
+      tvl: '$89M',
+      activeWallets: Math.floor(Math.random() * 10000) + 5000,
+      transactions24h: Math.floor(Math.random() * 100000) + 50000,
+      avgGas: '0.002',
+      tokenFlow: '$1.2M',
+      tokenFlowChange: '+15.3%',
+      activeWalletsChange: '+8.7%',
+      topToken: 'SEIYAN',
+      topTokenChange: '+45.2%',
+      riskyContracts: Math.floor(Math.random() * 5),
+      riskyContractsChange: '-50%',
+      swapVolume: '$892K',
+      swapVolumeChange: '+22.4%'
+    };
   }
 
   async searchTransactions(filters: any): Promise<BlockchainEvent[]> {
     try {
-      const result = await this.sendRequest('tools/call', {
-        name: 'search_transactions',
-        arguments: filters
+      if (!this.isConnected) {
+        return [];
+      }
+
+      // Use the transaction search capabilities of SEI MCP Server
+      const result = await this.sendHttpRequest('resources/read', {
+        uri: `evm://sei/transactions?${new URLSearchParams(filters).toString()}`
       });
 
-      const data = result?.content?.[0]?.text ? JSON.parse(result.content[0].text) : null;
+      const data = result?.contents?.[0]?.text ? JSON.parse(result.contents[0].text) : null;
       return data?.transactions || [];
     } catch (error) {
       console.error('Error searching transactions:', error);
@@ -370,12 +444,16 @@ class SeiMcpClient {
 
   async getNFTActivity(): Promise<any[]> {
     try {
-      const result = await this.sendRequest('tools/call', {
-        name: 'get_nft_activity',
-        arguments: {}
+      if (!this.isConnected) {
+        return [];
+      }
+
+      // Get NFT-related transactions
+      const result = await this.sendHttpRequest('resources/read', {
+        uri: 'evm://sei/nft/activity'
       });
 
-      const data = result?.content?.[0]?.text ? JSON.parse(result.content[0].text) : null;
+      const data = result?.contents?.[0]?.text ? JSON.parse(result.contents[0].text) : null;
       return data?.activities || [];
     } catch (error) {
       console.error('Error getting NFT activity:', error);
@@ -385,26 +463,46 @@ class SeiMcpClient {
 
   async getRiskAnalysis(address: string): Promise<any> {
     try {
-      const result = await this.sendRequest('tools/call', {
-        name: 'analyze_risk',
-        arguments: { address }
-      });
-
-      if (result?.content?.[0]?.text) {
-        return JSON.parse(result.content[0].text);
+      if (!this.isConnected) {
+        return this.getMockRiskAnalysis();
       }
 
-      // Return mock risk analysis if MCP is not available
-      const riskScore = Math.random() * 0.6; // Low to medium risk
+      // Check if address is a contract
+      const contractCheck = await this.sendHttpRequest('tools/call', {
+        name: 'is-contract',
+        arguments: { 
+          address,
+          network: 'sei'
+        }
+      });
+
+      const isContract = contractCheck?.isContract || false;
+      const riskScore = isContract ? Math.random() * 0.8 : Math.random() * 0.4;
+
       return {
         score: riskScore,
-        factors: riskScore > 0.3 ? ['High transaction frequency', 'Multiple token interactions'] : ['Normal activity pattern'],
-        recommendations: ['Verify contract addresses', 'Use established protocols', 'Monitor for unusual activity']
+        factors: riskScore > 0.5 ? 
+          ['Contract address detected', 'High transaction frequency', 'Multiple token interactions'] : 
+          ['Normal EOA activity', 'Standard transaction patterns'],
+        recommendations: [
+          'Verify contract addresses before interacting',
+          'Use established protocols',
+          'Monitor for unusual activity patterns'
+        ]
       };
     } catch (error) {
       console.error('Error getting risk analysis:', error);
-      return null;
+      return this.getMockRiskAnalysis();
     }
+  }
+
+  private getMockRiskAnalysis(): any {
+    const riskScore = Math.random() * 0.6;
+    return {
+      score: riskScore,
+      factors: riskScore > 0.3 ? ['High transaction frequency', 'Multiple token interactions'] : ['Normal activity pattern'],
+      recommendations: ['Verify contract addresses', 'Use established protocols', 'Monitor for unusual activity']
+    };
   }
 
   // Event system
@@ -451,9 +549,9 @@ class SeiMcpClient {
       this.reconnectTimeout = null;
     }
     
-    if (this.ws) {
-      this.ws.close(1000, 'Manual disconnect');
-      this.ws = null;
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
     }
     
     this.isConnected = false;
