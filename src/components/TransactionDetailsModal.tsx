@@ -1,21 +1,10 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Copy, ExternalLink } from 'lucide-react';
-
-interface FeedItem {
-  id: string;
-  type: 'transfer' | 'mint' | 'swap' | 'contract';
-  description: string;
-  amount?: string;
-  from?: string;
-  to?: string;
-  timestamp: string;
-  txHash: string;
-}
+import { type BlockchainEvent } from '@/services/seiMcpClient';
 
 interface TransactionDetailsModalProps {
-  transaction: FeedItem | null;
+  transaction: BlockchainEvent | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -54,7 +43,7 @@ const TransactionDetailsModal = ({ transaction, isOpen, onClose }: TransactionDe
 
           <div className="flex items-center justify-between">
             <span className="text-gray-400">Description:</span>
-            <span className="text-white">{transaction.description}</span>
+            <span className="text-white text-right max-w-[200px]">{transaction.description}</span>
           </div>
 
           {transaction.amount && (
@@ -64,35 +53,60 @@ const TransactionDetailsModal = ({ transaction, isOpen, onClose }: TransactionDe
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <span className="text-gray-400">From:</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-white text-sm font-mono">{transaction.from?.slice(0, 12)}...</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => copyToClipboard(transaction.from || '')}
-                className="h-6 w-6 p-0 hover:bg-green-500/20"
-              >
-                <Copy className="w-3 h-3" />
-              </Button>
+          {transaction.blockHeight && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Block Height:</span>
+              <span className="text-white">{transaction.blockHeight.toLocaleString()}</span>
             </div>
-          </div>
+          )}
 
-          <div className="flex items-center justify-between">
-            <span className="text-gray-400">To:</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-white text-sm font-mono">{transaction.to?.slice(0, 12)}...</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => copyToClipboard(transaction.to || '')}
-                className="h-6 w-6 p-0 hover:bg-green-500/20"
-              >
-                <Copy className="w-3 h-3" />
-              </Button>
+          {transaction.gasUsed && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Gas Used:</span>
+              <span className="text-white">{transaction.gasUsed}</span>
             </div>
-          </div>
+          )}
+
+          {transaction.fee && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Fee:</span>
+              <span className="text-white">{transaction.fee}</span>
+            </div>
+          )}
+
+          {transaction.from && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">From:</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-white text-sm font-mono">{transaction.from.slice(0, 12)}...</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => copyToClipboard(transaction.from || '')}
+                  className="h-6 w-6 p-0 hover:bg-green-500/20"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {transaction.to && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">To:</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-white text-sm font-mono">{transaction.to.slice(0, 12)}...</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => copyToClipboard(transaction.to || '')}
+                  className="h-6 w-6 p-0 hover:bg-green-500/20"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <span className="text-gray-400">Transaction Hash:</span>
