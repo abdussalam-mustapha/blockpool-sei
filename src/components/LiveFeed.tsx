@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import TransactionDetailsModal from './TransactionDetailsModal';
 
 interface FeedItem {
   id: string;
@@ -17,6 +17,8 @@ interface FeedItem {
 const LiveFeed = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [isPaused, setIsPaused] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<FeedItem | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Simulate real-time feed
   useEffect(() => {
@@ -55,52 +57,68 @@ const LiveFeed = () => {
     }
   };
 
-  return (
-    <Card className="glass-card p-6 h-full">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white flex items-center">
-          <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-          Live Blockchain Feed
-        </h3>
-        <Button
-          onClick={() => setIsPaused(!isPaused)}
-          variant="outline"
-          size="sm"
-          className="border-gray-600"
-        >
-          {isPaused ? 'Resume' : 'Pause'}
-        </Button>
-      </div>
+  const handleViewDetails = (item: FeedItem) => {
+    setSelectedTransaction(item);
+    setIsModalOpen(true);
+  };
 
-      <div className="space-y-3 overflow-y-auto max-h-96">
-        {feedItems.map((item) => (
-          <div
-            key={item.id}
-            className="p-3 bg-secondary/50 rounded-lg border border-gray-700 hover:border-primary/30 transition-colors"
+  return (
+    <>
+      <Card className="glass-card p-6 h-full">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white flex items-center">
+            <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+            Live Blockchain Feed
+          </h3>
+          <Button
+            onClick={() => setIsPaused(!isPaused)}
+            variant="outline"
+            size="sm"
+            className="border-green-600/50 hover:border-green-500 bg-black"
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(item.type)}`}>
-                {item.type.toUpperCase()}
-              </span>
-              <span className="text-xs text-gray-400">{item.timestamp}</span>
+            {isPaused ? 'Resume' : 'Pause'}
+          </Button>
+        </div>
+
+        <div className="space-y-3 overflow-y-auto max-h-96">
+          {feedItems.map((item) => (
+            <div
+              key={item.id}
+              className="p-3 bg-black border border-green-500/30 rounded-lg hover:border-green-500/50 transition-colors"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(item.type)}`}>
+                  {item.type.toUpperCase()}
+                </span>
+                <span className="text-xs text-gray-400">{item.timestamp}</span>
+              </div>
+              
+              <p className="text-sm text-white mb-2">{item.description}</p>
+              
+              {item.amount && (
+                <p className="text-sm text-green-400 font-medium">{item.amount}</p>
+              )}
+              
+              <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
+                <span>TX: {item.txHash}</span>
+                <button 
+                  onClick={() => handleViewDetails(item)}
+                  className="text-green-400 hover:text-green-300 transition-colors cursor-pointer"
+                >
+                  View Details
+                </button>
+              </div>
             </div>
-            
-            <p className="text-sm text-white mb-2">{item.description}</p>
-            
-            {item.amount && (
-              <p className="text-sm text-green-400 font-medium">{item.amount}</p>
-            )}
-            
-            <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
-              <span>TX: {item.txHash}</span>
-              <button className="text-primary hover:text-primary/80 transition-colors">
-                View Details
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
+          ))}
+        </div>
+      </Card>
+
+      <TransactionDetailsModal
+        transaction={selectedTransaction}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
   );
 };
 
