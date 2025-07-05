@@ -1,7 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Brain, Send, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { generateAIResponse } from '@/services/aiService';
 
@@ -33,6 +34,17 @@ const AIAssistant = () => {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -92,7 +104,7 @@ const AIAssistant = () => {
   };
 
   return (
-    <Card className="glass-card p-6 h-full flex flex-col">
+    <Card className="glass-card p-6 h-[600px] flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-white flex items-center">
           <Brain className="w-5 h-5 text-green-400 mr-2" />
@@ -104,88 +116,90 @@ const AIAssistant = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
-        {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+      <ScrollArea ref={scrollAreaRef} className="flex-1 mb-4 pr-4">
+        <div className="space-y-4">
+          {messages.map((message, index) => (
             <div
-              className={`max-w-[85%] p-4 rounded-lg ${
-                message.type === 'user'
-                  ? 'bg-primary text-black'
-                  : 'bg-secondary text-white border border-green-500/20'
-              }`}
+              key={index}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
-              
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-600/30">
-                <span className="text-xs opacity-70">{message.timestamp}</span>
+              <div
+                className={`max-w-[85%] p-4 rounded-lg ${
+                  message.type === 'user'
+                    ? 'bg-primary text-black'
+                    : 'bg-secondary text-white border border-green-500/20'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
                 
-                {message.type === 'assistant' && (
-                  <div className="flex items-center space-x-2">
-                    {message.confidence && (
-                      <span className={`text-xs ${getConfidenceColor(message.confidence)}`}>
-                        {(message.confidence * 100).toFixed(0)}% confident
-                      </span>
-                    )}
-                    
-                    <div className="flex items-center space-x-1">
-                      <button
-                        onClick={() => copyMessage(message.content)}
-                        className="p-1 hover:bg-gray-600/50 rounded transition-colors"
-                        title="Copy response"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                      <button
-                        className="p-1 hover:bg-gray-600/50 rounded transition-colors"
-                        title="Good response"
-                      >
-                        <ThumbsUp className="w-3 h-3" />
-                      </button>
-                      <button
-                        className="p-1 hover:bg-gray-600/50 rounded transition-colors"
-                        title="Poor response"
-                      >
-                        <ThumbsDown className="w-3 h-3" />
-                      </button>
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-600/30">
+                  <span className="text-xs opacity-70">{message.timestamp}</span>
+                  
+                  {message.type === 'assistant' && (
+                    <div className="flex items-center space-x-2">
+                      {message.confidence && (
+                        <span className={`text-xs ${getConfidenceColor(message.confidence)}`}>
+                          {(message.confidence * 100).toFixed(0)}% confident
+                        </span>
+                      )}
+                      
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => copyMessage(message.content)}
+                          className="p-1 hover:bg-gray-600/50 rounded transition-colors"
+                          title="Copy response"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                        <button
+                          className="p-1 hover:bg-gray-600/50 rounded transition-colors"
+                          title="Good response"
+                        >
+                          <ThumbsUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          className="p-1 hover:bg-gray-600/50 rounded transition-colors"
+                          title="Poor response"
+                        >
+                          <ThumbsDown className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
+                  )}
+                </div>
+
+                {message.sources && message.sources.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-gray-600/30">
+                    <p className="text-xs text-gray-400 mb-1">Sources:</p>
+                    {message.sources.map((source, idx) => (
+                      <a
+                        key={idx}
+                        href={source}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-green-400 hover:text-green-300 underline block"
+                      >
+                        {source}
+                      </a>
+                    ))}
                   </div>
                 )}
               </div>
-
-              {message.sources && message.sources.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-gray-600/30">
-                  <p className="text-xs text-gray-400 mb-1">Sources:</p>
-                  {message.sources.map((source, idx) => (
-                    <a
-                      key={idx}
-                      href={source}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-green-400 hover:text-green-300 underline block"
-                    >
-                      {source}
-                    </a>
-                  ))}
-                </div>
-              )}
             </div>
-          </div>
-        ))}
-        
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-secondary text-white p-4 rounded-lg border border-green-500/20">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm">Analyzing SEI chain data...</span>
+          ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-secondary text-white p-4 rounded-lg border border-green-500/20">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm">Analyzing SEI chain data...</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </ScrollArea>
 
       <div className="mb-4">
         <p className="text-xs text-gray-400 mb-2">Quick suggestions:</p>

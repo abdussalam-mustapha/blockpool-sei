@@ -8,6 +8,14 @@ interface WalletState {
   balance: string | null;
 }
 
+declare global {
+  interface Window {
+    keplr?: any;
+    compass?: any;
+    fin?: any;
+  }
+}
+
 export const useWallet = () => {
   const [wallet, setWallet] = useState<WalletState>({
     isConnected: false,
@@ -24,43 +32,125 @@ export const useWallet = () => {
 
   const checkConnection = async () => {
     try {
-      // Check if there's a stored connection
-      const storedAddress = localStorage.getItem('wallet_address');
-      if (storedAddress) {
-        setWallet(prev => ({
-          ...prev,
-          isConnected: true,
-          address: storedAddress,
-          chainId: 'sei-chain',
-          balance: '1.234 SEI' // Mock balance
-        }));
+      // Check for Keplr wallet
+      if (window.keplr) {
+        const chainId = 'pacific-1'; // SEI mainnet
+        try {
+          const key = await window.keplr.getKey(chainId);
+          if (key) {
+            const balance = await getBalance(key.bech32Address);
+            setWallet({
+              isConnected: true,
+              address: key.bech32Address,
+              chainId: chainId,
+              balance: balance
+            });
+          }
+        } catch (error) {
+          console.log('No existing connection found');
+        }
       }
     } catch (error) {
       console.error('Error checking wallet connection:', error);
     }
   };
 
+  const getBalance = async (address: string): Promise<string> => {
+    try {
+      // Use SEI RPC endpoint to get balance
+      const response = await fetch('https://sei-rpc.polkachu.com/abci_query?path="/cosmos.bank.v1beta1.Query/Balance"&data=0x' + 
+        Buffer.from(JSON.stringify({
+          address: address,
+          denom: 'usei'
+        })).toString('hex'));
+      
+      const data = await response.json();
+      if (data.result && data.result.response && data.result.response.value) {
+        const decodedValue = JSON.parse(Buffer.from(data.result.response.value, 'base64').toString());
+        const balance = parseInt(decodedValue.balance.amount) / 1000000; // Convert from usei to SEI
+        return `${balance.toFixed(3)} SEI`;
+      }
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+    }
+    return '0.000 SEI';
+  };
+
   const connectWallet = async () => {
     setIsConnecting(true);
     
     try {
-      // Simulate wallet connection (in real implementation, this would interact with wallet extension)
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate connection delay
-      
-      // Mock wallet address for demonstration
-      const mockAddress = `sei1${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
-      
-      // Store connection
-      localStorage.setItem('wallet_address', mockAddress);
-      
-      setWallet({
-        isConnected: true,
-        address: mockAddress,
-        chainId: 'sei-chain',
-        balance: '1.234 SEI'
-      });
+      if (!window.keplr && !window.compass && !window.fin) {
+        throw new Error('No wallet extension found. Please install Keplr, Compass, or Fin wallet.');
+      }
 
-      console.log('Wallet connected successfully:', mockAddress);
+      const chainId = 'pacific-1'; // SEI mainnet
+      
+      // Try Keplr first
+      if (window.keplr) {
+        try {
+          await window.keplr.enable(chainId);
+          const key = await window.keplr.getKey(chainId);
+          const balance = await getBalance(key.bech32Address);
+          
+          setWallet({
+            isConnected: true,
+            address: key.bech32Address,
+            chainId: chainId,
+            balance: balance
+          });
+
+          console.log('Wallet connected successfully:', key.bech32Address);
+          return;
+        } catch (keplrError) {
+          console.error('Keplr connection failed:', keplrError);
+        }
+      }
+
+      // Try Compass wallet
+      if (window.compass) {
+        try {
+          await window.compass.enable(chainId);
+          const key = await window.compass.getKey(chainId);
+          const balance = await getBalance(key.bech32Address);
+          
+          setWallet({
+            isConnected: true,
+            address: key.bech32Address,
+            chainId: chainId,
+            balance: balance
+          });
+
+          console.log('Compass wallet connected successfully:', key.bech32Address);
+          return;
+        } catch (compassError) {
+          console.error('Compass connection failed:', compassError);
+        }
+      }
+
+      // Try Fin wallet
+      if (window.fin) {
+        try {
+          await window.fin.enable(chainId);
+          const key = await window.fin.getKey(chainId);
+          const balance = await getBalance(key.bech32Address);
+          
+          setWallet({
+            isConnected: true,
+            address: key.bech32Address,
+            chainId: chainId,
+            balance: balance
+          });
+
+          console.log('Fin wallet connected successfully:', key.bech32Address);
+          return;
+        } catch (finError) {
+          console.error('Fin connection failed:', finError);
+        }
+      }
+
+      throw new Error('Failed to connect to any available wallet');
+
     } catch (error) {
       console.error('Error connecting wallet:', error);
       throw error;
@@ -70,7 +160,6 @@ export const useWallet = () => {
   };
 
   const disconnectWallet = () => {
-    localStorage.removeItem('wallet_address');
     setWallet({
       isConnected: false,
       address: null,
