@@ -1,10 +1,36 @@
 
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Copy, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useWallet } from '@/hooks/useWallet';
 
 const Header = () => {
-  const [isConnected, setIsConnected] = useState(false);
+  const { wallet, isConnecting, connectWallet, disconnectWallet } = useWallet();
+  const [showAddressTooltip, setShowAddressTooltip] = useState(false);
+
+  const handleWalletAction = async () => {
+    if (wallet.isConnected) {
+      disconnectWallet();
+    } else {
+      try {
+        await connectWallet();
+      } catch (error) {
+        console.error('Failed to connect wallet:', error);
+      }
+    }
+  };
+
+  const copyAddress = () => {
+    if (wallet.address) {
+      navigator.clipboard.writeText(wallet.address);
+      setShowAddressTooltip(true);
+      setTimeout(() => setShowAddressTooltip(false), 2000);
+    }
+  };
+
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   return (
     <header className="sticky top-0 z-50 glass-card border-b border-green-500/20">
@@ -36,16 +62,46 @@ const Header = () => {
             />
           </div>
           
-          <Button
-            onClick={() => setIsConnected(!isConnected)}
-            className={`${
-              isConnected 
-                ? 'bg-green-600 hover:bg-green-700 glow-green' 
-                : 'bg-primary hover:bg-primary/90'
-            } font-medium`}
-          >
-            {isConnected ? 'Connected' : 'Connect Wallet'}
-          </Button>
+          {wallet.isConnected ? (
+            <div className="flex items-center space-x-2">
+              <div className="bg-secondary rounded-lg px-3 py-2 text-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-gray-300">{formatAddress(wallet.address!)}</span>
+                  <button
+                    onClick={copyAddress}
+                    className="hover:text-green-400 transition-colors relative"
+                    title="Copy address"
+                  >
+                    <Copy className="w-3 h-3" />
+                    {showAddressTooltip && (
+                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                        Copied!
+                      </div>
+                    )}
+                  </button>
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Balance: {wallet.balance}
+                </div>
+              </div>
+              <Button
+                onClick={handleWalletAction}
+                variant="outline"
+                className="border-green-500/30 hover:border-green-500/50"
+              >
+                Disconnect
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={handleWalletAction}
+              disabled={isConnecting}
+              className="bg-primary hover:bg-primary/90 font-medium glow-green"
+            >
+              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+            </Button>
+          )}
         </div>
       </div>
     </header>

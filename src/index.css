@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 11 15 15; /* #0b0f0f */
+    --background: 0 0 0; /* Pure black */
     --foreground: 248 250 252;
 
     --card: 16 25 24; /* #101918 */
@@ -36,7 +36,7 @@
 
     --radius: 0.75rem;
 
-    --sidebar-background: 11 15 15;
+    --sidebar-background: 0 0 0;
     --sidebar-foreground: 248 250 252;
     --sidebar-primary: 34 197 94;
     --sidebar-primary-foreground: 0 0 0;
@@ -53,7 +53,10 @@
   }
 
   body {
-    @apply bg-background text-foreground font-['Inter',sans-serif];
+    @apply text-foreground font-['Inter',sans-serif];
+    background: linear-gradient(135deg, #000000 0%, #0a0f0a 25%, #0f1f0f 50%, #1a2e1a 75%, #22c55e 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 
