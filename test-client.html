@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Client Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .connected { background: #2d5a2d; }
+        .disconnected { background: #5a2d2d; }
+        .log { background: #2a2a2a; padding: 10px; border-radius: 5px; height: 300px; overflow-y: auto; font-family: monospace; }
+        button { padding: 10px 20px; margin: 5px; background: #4a9eff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #3a8eef; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 SEI MCP Client Test</h1>
+        
+        <div id="status" class="status disconnected">
+            Status: Disconnected
+        </div>
+        
+        <div>
+            <button onclick="testConnection()">Test Connection</button>
+            <button onclick="testWalletAnalysis()">Test Wallet Analysis</button>
+            <button onclick="testMarketData()">Test Market Data</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        // Simple MCP client test
+        let eventSource = null;
+        let sessionId = null;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(connected, message = '') {
+            const statusDiv = document.getElementById('status');
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = `Status: Connected ${message}`;
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = `Status: Disconnected ${message}`;
+            }
+        }
+        
+        window.testConnection = function() {
+            log('🔌 Testing MCP connection...');
+            
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            sessionId = 'test_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            const url = `http://localhost:3001/mcp?sessionId=${sessionId}`;
+            
+            log(`🌐 Connecting to: ${url}`);
+            
+            eventSource = new EventSource(url);
+            
+            eventSource.onopen = function() {
+                log('✅ SSE connection opened');
+                updateStatus(true, `(Session: ${sessionId})`);
+            };
+            
+            eventSource.onmessage = function(event) {
+                log(`📨 Received: ${event.data}`);
+                try {
+                    const data = JSON.parse(event.data);
+                    log(`📋 Parsed: ${JSON.stringify(data, null, 2)}`);
+                } catch (e) {
+                    log(`⚠️ Failed to parse JSON: ${e.message}`);
+                }
+            };
+            
+            eventSource.onerror = function(error) {
+                log(`❌ SSE error: ${JSON.stringify(error)}`);
+                updateStatus(false, '(Error)');
+            };
+            
+            // Test timeout
+            setTimeout(() => {
+                if (eventSource && eventSource.readyState === EventSource.CONNECTING) {
+                    log('⏰ Connection timeout');
+                    eventSource.close();
+                    updateStatus(false, '(Timeout)');
+                }
+            }, 10000);
+        };
+        
+        window.testWalletAnalysis = async function() {
+            log('🔍 Testing wallet analysis...');
+            
+            try {
+                const message = {
+                    jsonrpc: '2.0',
+                    id: Date.now(),
+                    method: 'tools/call',
+                    params: {
+                        name: 'get-balance',
+                        arguments: {
+                            address: 'sei1example...',
+                            network: 'sei'
+                        }
+                    }
+                };
+                
+                const response = await fetch('http://localhost:3001/mcp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        ...(sessionId && { 'X-Session-ID': sessionId })
+                    },
+                    body: JSON.stringify(message)
+                });
+                
+                const result = await response.json();
+                log(`💰 Wallet analysis result: ${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                log(`❌ Wallet analysis error: ${error.message}`);
+            }
+        };
+        
+        window.testMarketData = async function() {
+            log('📊 Testing market data...');
+            
+            try {
+                const message = {
+                    jsonrpc: '2.0',
+                    id: Date.now(),
+                    method: 'resources/read',
+                    params: {
+                        uri: 'evm://sei/chain'
+                    }
+                };
+                
+                const response = await fetch('http://localhost:3001/mcp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        ...(sessionId && { 'X-Session-ID': sessionId })
+                    },
+                    body: JSON.stringify(message)
+                });
+                
+                const result = await response.json();
+                log(`📈 Market data result: ${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                log(`❌ Market data error: ${error.message}`);
+            }
+        };
+        
+        window.clearLog = function() {
+            document.getElementById('log').innerHTML = '';
+        };
+        
+        // Auto-test on load
+        log('🚀 MCP Client Test Page Loaded');
+        log('Click "Test Connection" to start');
+    </script>
+</body>
+</html>

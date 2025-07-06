@@ -17,6 +17,10 @@ const LiveFeed = () => {
       try {
         await seiMcpClient.connect();
         setConnectionStatus('connected');
+        
+        // Load initial events
+        const events = await seiMcpClient.getRecentBlockchainEvents();
+        setFeedItems(events);
       } catch (error) {
         console.error('Failed to connect to MCP server:', error);
         setConnectionStatus('error');
@@ -40,12 +44,33 @@ const LiveFeed = () => {
     seiMcpClient.on('blockchainEvent', handleBlockchainEvent);
     seiMcpClient.on('connection', handleConnectionChange);
 
+    // Poll for new events every 2 minutes to drastically reduce server load
+    const pollInterval = setInterval(async () => {
+      if (connectionStatus === 'connected' && !isPaused) {
+        try {
+          console.log('🔄 Polling for new blockchain events (every 2 minutes)...');
+          const events = await seiMcpClient.getRecentBlockchainEvents();
+          // Only add new events (check if they don't already exist)
+          const newEvents = events.filter(event => 
+            !feedItems.some(existing => existing.id === event.id)
+          );
+          if (newEvents.length > 0) {
+            setFeedItems(prev => [...newEvents, ...prev].slice(0, 50));
+          }
+        } catch (error) {
+          console.error('Error polling for events:', error);
+          // Don't disconnect on polling errors, just log them
+        }
+      }
+    }, 120000); // Poll every 2 minutes (120 seconds)
+
     // Cleanup
     return () => {
       seiMcpClient.off('blockchainEvent', handleBlockchainEvent);
       seiMcpClient.off('connection', handleConnectionChange);
+      clearInterval(pollInterval);
     };
-  }, [isPaused]);
+  }, [isPaused, connectionStatus, feedItems]);
 
   // Fallback simulation for demo purposes when MCP is not available
   useEffect(() => {
@@ -54,6 +79,16 @@ const LiveFeed = () => {
         const simulatedEvent: BlockchainEvent = {
           id: Math.random().toString(),
           type: ['transfer', 'mint', 'swap', 'contract'][Math.floor(Math.random() * 4)] as any,
+          timestamp: new Date().toISOString(),
+          from: `0x${Math.random().toString(16).substr(2, 40)}`,
+          to: `0x${Math.random().toString(16).substr(2, 40)}`,
+          amount: (Math.random() * 1000).toFixed(6),
+          token: ['SEI', 'USDC', 'SEIYAN', 'WETH'][Math.floor(Math.random() * 4)],
+          hash: `0x${Math.random().toString(16).substr(2, 64)}`,
+          gasUsed: Math.floor(Math.random() * 100000).toString(),
+          gasPrice: (Math.random() * 50).toFixed(2),
+          blockNumber: Math.floor(Math.random() * 1000000) + 5000000,
+          status: Math.random() > 0.1 ? 'success' : 'failed',
           description: [
             'Token transfer detected',
             'NFT minted on Palette',
@@ -62,13 +97,8 @@ const LiveFeed = () => {
             'Large whale movement',
             'New token pair created'
           ][Math.floor(Math.random() * 6)],
-          amount: Math.random() > 0.5 ? `${(Math.random() * 10000).toFixed(2)} SEI` : undefined,
-          from: `sei1${Math.random().toString(36).substring(7)}`,
-          to: `sei1${Math.random().toString(36).substring(7)}`,
-          timestamp: new Date().toLocaleTimeString(),
           txHash: `0x${Math.random().toString(16).substring(2, 10)}`,
           blockHeight: Math.floor(Math.random() * 1000000) + 5000000,
-          gasUsed: `${Math.floor(Math.random() * 100000) + 10000}`,
           fee: `${(Math.random() * 0.01).toFixed(4)} SEI`
         };
 
