@@ -57,102 +57,178 @@ const AnalyticsWidgets = () => {
   ]);
 
   const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [previousData, setPreviousData] = useState<any>(null);
+  const [isRealTime, setIsRealTime] = useState(false);
+
+  // Calculate percentage change between current and previous values
+  const calculateChange = (current: number, previous: number): { change: string; trend: 'up' | 'down' } => {
+    if (!previous || previous === 0) return { change: '+0.0%', trend: 'up' };
+    const percentChange = ((current - previous) / previous) * 100;
+    const change = `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(1)}%`;
+    const trend = percentChange >= 0 ? 'up' : 'down';
+    return { change, trend };
+  };
+
+  const fetchRealTimeAnalytics = async () => {
+    try {
+      const connectionStatus = seiMcpClient.getConnectionStatus();
+      
+      if (connectionStatus.connected) {
+        setIsRealTime(true);
+        
+        // Fetch live blockchain events for real-time calculations
+        const recentEvents = await seiMcpClient.getRecentBlockchainEvents();
+        const marketData = await seiMcpClient.getMarketData();
+        const nftActivity = await seiMcpClient.getNFTActivity();
+        
+        // Calculate real-time metrics from blockchain events
+        const now = new Date();
+        const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        
+        // Filter events by time periods
+        const recentHourEvents = recentEvents.filter(e => new Date(e.timestamp) > oneHourAgo);
+        const recentDayEvents = recentEvents.filter(e => new Date(e.timestamp) > oneDayAgo);
+        
+        // Calculate metrics
+        const tokenInflow = recentDayEvents
+          .filter(e => e.type === 'transfer')
+          .reduce((sum, e) => sum + parseFloat(e.amount || '0'), 0);
+        
+        const activeWallets = new Set([
+          ...recentDayEvents.map(e => e.from),
+          ...recentDayEvents.map(e => e.to)
+        ]).size;
+        
+        const nftMints = recentDayEvents.filter(e => e.type === 'mint').length;
+        const swapVolume = recentDayEvents
+          .filter(e => e.type === 'swap')
+          .reduce((sum, e) => sum + parseFloat(e.amount || '0'), 0);
+        
+        const riskyContracts = recentDayEvents
+          .filter(e => e.type === 'contract' && parseFloat(e.gasPrice || '0') > 0.01)
+          .length;
+        
+        // Current data
+        const currentData = {
+          tokenInflow,
+          activeWallets,
+          nftMints,
+          swapVolume,
+          riskyContracts
+        };
+        
+        // Calculate changes from previous data
+        const tokenInflowChange = previousData ? calculateChange(tokenInflow, previousData.tokenInflow) : { change: '+0.0%', trend: 'up' as const };
+        const activeWalletsChange = previousData ? calculateChange(activeWallets, previousData.activeWallets) : { change: '+0.0%', trend: 'up' as const };
+        const nftMintsChange = previousData ? calculateChange(nftMints, previousData.nftMints) : { change: '+0.0%', trend: 'up' as const };
+        const swapVolumeChange = previousData ? calculateChange(swapVolume, previousData.swapVolume) : { change: '+0.0%', trend: 'up' as const };
+        const riskyContractsChange = previousData ? calculateChange(riskyContracts, previousData.riskyContracts) : { change: '+0.0%', trend: 'down' as const };
+        
+        // Update widgets with real-time data
+        setWidgets([
+          {
+            title: 'Token Inflow/Outflow',
+            value: `$${(tokenInflow * 0.67).toFixed(1)}K`, // Convert SEI to USD approximation
+            change: tokenInflowChange.change,
+            trend: tokenInflowChange.trend
+          },
+          {
+            title: 'Active Wallets',
+            value: activeWallets.toLocaleString(),
+            change: activeWalletsChange.change,
+            trend: activeWalletsChange.trend
+          },
+          {
+            title: 'NFTs Minted Today',
+            value: nftMints.toString(),
+            change: nftMintsChange.change,
+            trend: nftMintsChange.trend
+          },
+          {
+            title: 'Top Token Volume',
+            value: marketData?.topToken || 'SEI',
+            change: `$${(swapVolume * 0.67).toFixed(0)}K`,
+            trend: swapVolumeChange.trend
+          },
+          {
+            title: 'Risky Contracts',
+            value: riskyContracts.toString(),
+            change: riskyContractsChange.change,
+            trend: riskyContractsChange.trend
+          },
+          {
+            title: 'Swap Volume',
+            value: `$${(swapVolume * 0.67).toFixed(1)}K`,
+            change: swapVolumeChange.change,
+            trend: swapVolumeChange.trend
+          }
+        ]);
+        
+        // Store current data for next comparison
+        setPreviousData(currentData);
+        setLastUpdate(new Date().toLocaleTimeString());
+        
+      } else {
+        setIsRealTime(false);
+        // Use simulated real-time data when MCP is not connected
+        const simulatedData = [
+          {
+            title: 'Token Inflow/Outflow',
+            value: `$${(Math.random() * 2000 + 800).toFixed(1)}K`,
+            change: `${Math.random() > 0.5 ? '+' : '-'}${(Math.random() * 20).toFixed(1)}%`,
+            trend: Math.random() > 0.5 ? 'up' as const : 'down' as const
+          },
+          {
+            title: 'Active Wallets',
+            value: (Math.floor(Math.random() * 5000) + 5000).toLocaleString(),
+            change: `+${(Math.random() * 15).toFixed(1)}%`,
+            trend: 'up' as const
+          },
+          {
+            title: 'NFTs Minted Today',
+            value: (Math.floor(Math.random() * 500) + 100).toString(),
+            change: `${Math.random() > 0.6 ? '+' : '-'}${(Math.random() * 30).toFixed(1)}%`,
+            trend: Math.random() > 0.6 ? 'up' as const : 'down' as const
+          },
+          {
+            title: 'Top Token Volume',
+            value: 'SEI',
+            change: `$${(Math.random() * 1000 + 500).toFixed(0)}K`,
+            trend: 'up' as const
+          },
+          {
+            title: 'Risky Contracts',
+            value: Math.floor(Math.random() * 10).toString(),
+            change: `-${(Math.random() * 50).toFixed(1)}%`,
+            trend: 'down' as const
+          },
+          {
+            title: 'Swap Volume',
+            value: `$${(Math.random() * 1500 + 500).toFixed(1)}K`,
+            change: `+${(Math.random() * 25).toFixed(1)}%`,
+            trend: 'up' as const
+          }
+        ];
+        
+        setWidgets(simulatedData);
+        setLastUpdate('Demo data');
+      }
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      
+      // Fallback to simulated data
+      setWidgets(prev => prev.map(widget => ({
+        ...widget,
+        loading: false
+      })));
+    }
+  };
 
   useEffect(() => {
     const fetchAnalyticsData = async () => {
       try {
-        const connectionStatus = seiMcpClient.getConnectionStatus();
-        
-        if (connectionStatus.connected) {
-          // Fetch real data from MCP server
-          const marketData = await seiMcpClient.getMarketData();
-          const nftActivity = await seiMcpClient.getNFTActivity();
-          
-          if (marketData) {
-            setWidgets([
-              {
-                title: 'Token Inflow/Outflow',
-                value: marketData.tokenFlow || '$1.2M',
-                change: marketData.tokenFlowChange || '+15.3%',
-                trend: (marketData.tokenFlowChange?.startsWith('+') ? 'up' : 'down') as 'up' | 'down'
-              },
-              {
-                title: 'Active Wallets',
-                value: marketData.activeWallets?.toString() || '8,492',
-                change: marketData.activeWalletsChange || '+8.7%',
-                trend: (marketData.activeWalletsChange?.startsWith('+') ? 'up' : 'down') as 'up' | 'down'
-              },
-              {
-                title: 'NFTs Minted Today',
-                value: nftActivity?.length?.toString() || '247',
-                change: marketData.nftMintChange || '-2.1%',
-                trend: (marketData.nftMintChange?.startsWith('+') ? 'up' : 'down') as 'up' | 'down'
-              },
-              {
-                title: 'Top Token Volume',
-                value: marketData.topToken || 'SEIYAN',
-                change: marketData.topTokenChange || '+45.2%',
-                trend: (marketData.topTokenChange?.startsWith('+') ? 'up' : 'down') as 'up' | 'down'
-              },
-              {
-                title: 'Risky Contracts',
-                value: marketData.riskyContracts?.toString() || '3',
-                change: marketData.riskyContractsChange || '-50%',
-                trend: (marketData.riskyContractsChange?.startsWith('+') ? 'up' : 'down') as 'up' | 'down'
-              },
-              {
-                title: 'Swap Volume',
-                value: marketData.swapVolume || '$892K',
-                change: marketData.swapVolumeChange || '+22.4%',
-                trend: (marketData.swapVolumeChange?.startsWith('+') ? 'up' : 'down') as 'up' | 'down'
-              }
-            ]);
-            
-            setLastUpdate(new Date().toLocaleTimeString());
-          }
-        } else {
-          // Use simulated data when MCP is not connected
-          setWidgets([
-            {
-              title: 'Token Inflow/Outflow',
-              value: '$1.2M',
-              change: '+15.3%',
-              trend: 'up'
-            },
-            {
-              title: 'Active Wallets',
-              value: '8,492',
-              change: '+8.7%',
-              trend: 'up'
-            },
-            {
-              title: 'NFTs Minted Today',
-              value: '247',
-              change: '-2.1%',
-              trend: 'down'
-            },
-            {
-              title: 'Top Token Volume',
-              value: 'SEIYAN',
-              change: '+45.2%',
-              trend: 'up'
-            },
-            {
-              title: 'Risky Contracts',
-              value: '3',
-              change: '-50%',
-              trend: 'down'
-            },
-            {
-              title: 'Swap Volume',
-              value: '$892K',
-              change: '+22.4%',
-              trend: 'up'
-            }
-          ]);
-          
-          setLastUpdate('Demo data');
-        }
+        await fetchRealTimeAnalytics();
       } catch (error) {
         console.error('Error fetching analytics data:', error);
         
@@ -167,8 +243,8 @@ const AnalyticsWidgets = () => {
     // Initial fetch
     fetchAnalyticsData();
 
-    // Set up periodic updates
-    const interval = setInterval(fetchAnalyticsData, 30000); // Update every 30 seconds
+    // Set up periodic updates every 15 seconds for real-time feel
+    const interval = setInterval(fetchAnalyticsData, 15000);
 
     // Listen for market updates from MCP
     const handleMarketUpdate = (data: any) => {
@@ -181,7 +257,7 @@ const AnalyticsWidgets = () => {
       clearInterval(interval);
       seiMcpClient.off('marketUpdate', handleMarketUpdate);
     };
-  }, []);
+  }, [previousData]);
 
   return (
     <div className="space-y-4">

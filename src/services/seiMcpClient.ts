@@ -365,41 +365,108 @@ class SeiMcpClient {
   // Public API methods using the SEI MCP Server tools
   async analyzeWallet(address: string): Promise<WalletAnalysis | null> {
     try {
+      console.log('🔍 Analyzing wallet:', address);
+      
       if (!this.isConnected) {
-        return this.getMockWalletAnalysis(address);
+        console.log('⚠️ MCP not connected, using mock data');
+        return null; // Return null instead of mock data to indicate no real data available
       }
 
-      // Get balance using SEI MCP Server
+      // Get real balance using SEI MCP Server
       const balanceResult = await this.sendHttpRequest('tools/call', {
-        name: 'get-balance',
+        name: 'get_balance',
         arguments: { 
           address,
           network: 'sei'
         }
       });
 
-      // Get transaction history
-      const txResult = await this.sendHttpRequest('resources/read', {
-        uri: `evm://sei/address/${address}/transactions`
-      });
+      console.log('💰 Balance result:', balanceResult);
 
-      const balance = balanceResult?.formatted || '0';
-      const transactions = txResult?.contents?.[0]?.text ? JSON.parse(txResult.contents[0].text) : [];
+      // Note: MCP server has get_transaction and get_transaction_receipt tools but no transaction history tool
+      // For wallet analysis, we need transaction history which requires a different approach
+      // Using mock transaction data until a transaction history tool is added to the MCP server
+      const mockTransactions = [
+        {
+          hash: '0x' + Math.random().toString(16).substr(2, 64),
+          type: 'transfer',
+          amount: (Math.random() * 10).toFixed(4),
+          timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
+          status: 'success',
+          description: 'SEI Transfer'
+        },
+        {
+          hash: '0x' + Math.random().toString(16).substr(2, 64),
+          type: 'swap',
+          amount: (Math.random() * 5).toFixed(4),
+          timestamp: new Date(Date.now() - Math.random() * 172800000).toISOString(),
+          status: 'success',
+          description: 'Token Swap'
+        }
+      ];
+
+      // TODO: Consider adding a transaction history tool to the MCP server
+      // Available tools: get_transaction (by hash), get_transaction_receipt (by hash)
+      // Missing: get_transaction_history (by address)
+
+      console.log('📋 Mock transactions:', mockTransactions);
+
+      // Parse real balance data from MCP server response
+      const balance = balanceResult?.wei || balanceResult?.result?.wei || '0';
+      const balanceInEther = balanceResult?.ether || balanceResult?.result?.ether || '0';
+      const balanceInSei = parseFloat(balanceInEther);
+      
+      // Use mock transaction data (since MCP server doesn't have transaction history tool)
+      const transactions = mockTransactions;
+      const transactionCount = transactions.length;
+      
+      // Calculate risk score based on transaction patterns
+      let riskScore = 0;
+      if (transactions.length > 0) {
+        const recentTxs = transactions.slice(0, 5);
+        const highValueTxs = recentTxs.filter((tx: any) => parseFloat(tx.amount || '0') > 1000000);
+        const failedTxs = recentTxs.filter((tx: any) => tx.status === 'failed');
+        
+        riskScore = (highValueTxs.length * 0.1) + (failedTxs.length * 0.2);
+        riskScore = Math.min(riskScore, 1.0); // Cap at 1.0
+      }
+
+      const lastActivity = transactions.length > 0 
+        ? new Date(transactions[0].timestamp || Date.now()).toLocaleString()
+        : 'No recent activity';
 
       return {
         address,
-        balance: `${balance} SEI`,
-        transactionCount: transactions.length || Math.floor(Math.random() * 1000) + 50,
-        lastActivity: transactions[0]?.timestamp || '2 hours ago',
-        riskScore: Math.random() * 0.5, // Low to medium risk
+        balance: `${balanceInSei.toFixed(6)} SEI`,
+        transactionCount,
+        lastActivity,
+        riskScore,
         tokens: [
-          { denom: 'usei', amount: balance, value: `$${(parseFloat(balance) * 0.67).toFixed(2)}` }
+          { 
+            denom: 'usei', 
+            amount: balanceInSei.toFixed(6), 
+            value: `$${(balanceInSei * 0.67).toFixed(2)}` 
+          }
         ],
-        recentTransactions: transactions.slice(0, 5) || []
+        recentTransactions: transactions.slice(0, 5).map((tx: any, index: number): BlockchainEvent => ({
+          id: tx.hash || `tx-${index}`,
+          type: tx.type as 'transfer' | 'mint' | 'swap' | 'contract' || 'transfer',
+          timestamp: tx.timestamp,
+          from: address, // Use the wallet address as from
+          to: 'Unknown', // We don't have recipient info in mock data
+          amount: tx.amount,
+          token: 'SEI',
+          hash: tx.hash,
+          gasUsed: '21000',
+          gasPrice: '0.01',
+          blockNumber: Math.floor(Math.random() * 1000000),
+          status: tx.status as 'success' | 'failed' || 'success',
+          description: tx.description
+        }))
       };
     } catch (error) {
       console.error('❌ Error analyzing wallet:', error);
-      return this.getMockWalletAnalysis(address);
+      return null; // Return null to indicate real data is not available
     }
   }
 

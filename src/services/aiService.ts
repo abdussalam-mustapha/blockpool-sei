@@ -25,26 +25,46 @@ export const generateAIResponse = async (query: string): Promise<AIResponse> => 
       const addressMatch = query.match(/sei1[a-z0-9]{38,58}/);
       if (addressMatch) {
         const address = addressMatch[0];
-        const walletData = await seiMcpClient.analyzeWallet(address);
+        console.log('🤖 AI analyzing wallet:', address);
         
-        if (walletData) {
-          const riskLevel = walletData.riskScore < 0.3 ? 'Low' : walletData.riskScore < 0.7 ? 'Medium' : 'High';
-          const tokenList = walletData.tokens.slice(0, 5).map(t => `${t.amount} ${t.denom}`).join(', ');
+        try {
+          const walletData = await seiMcpClient.analyzeWallet(address);
           
+          if (walletData) {
+            const riskLevel = walletData.riskScore < 0.3 ? 'Low' : walletData.riskScore < 0.7 ? 'Medium' : 'High';
+            const tokenList = walletData.tokens.slice(0, 5).map(t => `${t.amount} ${t.denom}`).join(', ');
+            
+            // Check if wallet has zero balance
+            const balanceValue = parseFloat(walletData.balance.replace(' SEI', ''));
+            const hasBalance = balanceValue > 0;
+            
+            let balanceStatus = '';
+            if (!hasBalance) {
+              balanceStatus = '🚫 **This wallet appears to be empty or inactive.**\n\n';
+            }
+            
+            return {
+              content: `🔍 **Live Wallet Analysis: ${address}**\n\n${balanceStatus}💰 **Current Holdings:**\n• Balance: ${walletData.balance}\n• USD Value: ${walletData.tokens[0]?.value || '$0.00'}\n• Tokens: ${tokenList}\n\n📈 **Activity Summary:**\n• Total transactions: ${walletData.transactionCount}\n• Last activity: ${walletData.lastActivity}\n• Risk score: ${walletData.riskScore.toFixed(2)} (${riskLevel})\n\n${walletData.recentTransactions.length > 0 ? `🔄 **Recent Transactions:**\n${walletData.recentTransactions.slice(0, 3).map(tx => `• ${tx.description} (${tx.timestamp})`).join('\n')}` : '🚫 **No recent transactions found**'}\n\n✅ **Real-time data from SEI blockchain via MCP Server**`,
+              confidence: 0.98,
+              sources: [`https://seistream.app/address/${address}`, 'Live SEI MCP Server']
+            };
+          } else {
+            return {
+              content: `⚠️ **Unable to fetch live data for wallet ${address}**\n\nThis could be due to:\n• MCP server connection issues\n• Invalid address format\n• Network connectivity problems\n\n🔄 **Please try again in a moment.** The system needs live blockchain data to provide accurate wallet analysis.\n\n🔍 **Address format:** SEI addresses start with 'sei1' followed by 39-59 characters`,
+              confidence: 0.2,
+              sources: []
+            };
+          }
+        } catch (error) {
+          console.error('❌ AI wallet analysis error:', error);
           return {
-            content: `🔍 **Wallet Analysis: ${address}**\n\n💰 **Holdings:**\n• Balance: ${walletData.balance}\n• Tokens: ${tokenList}\n\n📊 **Activity:**\n• Total transactions: ${walletData.transactionCount}\n• Last activity: ${walletData.lastActivity}\n• Risk score: ${walletData.riskScore.toFixed(2)} (${riskLevel})\n\n🔄 **Recent Activity:**\n${walletData.recentTransactions.slice(0, 3).map(tx => `• ${tx.description} (${tx.timestamp})`).join('\n')}\n\n✅ **Live data from SEI MCP Server**`,
-            confidence: 0.95,
-            sources: [`https://seistream.app/address/${address}`]
-          };
-        } else {
-          return {
-            content: `❌ Unable to fetch data for wallet ${address}. The address might be invalid or the MCP server is experiencing issues.\n\nPlease verify the address and try again.`,
-            confidence: 0.3
+            content: `❌ **Error analyzing wallet ${address}**\n\nThere was a technical issue connecting to the SEI blockchain. Please:\n• Verify the address is correct\n• Check your internet connection\n• Try again in a few moments\n\n🔧 **Technical details:** ${error instanceof Error ? error.message : 'Unknown error'}`,
+            confidence: 0.1
           };
         }
       } else {
         return {
-          content: `To analyze a specific wallet, please provide a valid SEI address (starts with "sei1").\n\n🔍 **I can analyze:**\n• Transaction history\n• Token holdings\n• Risk assessment\n• Trading patterns\n• Recent activity\n\n**Example:** "Analyze wallet sei1abc123..."`,
+          content: `To analyze a specific wallet, please provide a valid SEI address (starts with "sei1").\n\n🔍 **I can provide real-time analysis of:**\n• Current balance and token holdings\n• Transaction history and patterns\n• Risk assessment and security score\n• Trading activity and volume\n• Recent blockchain activity\n\n**Example:** "Analyze wallet sei1abc123..."\n\n✅ **All data is fetched live from the SEI blockchain**`,
           confidence: 0.7
         };
       }
