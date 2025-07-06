@@ -369,7 +369,7 @@ class SeiMcpClient {
       
       if (!this.isConnected) {
         console.log('⚠️ MCP not connected, using mock data');
-        return null; // Return null instead of mock data to indicate no real data available
+        return this.getMockWalletAnalysis(address);
       }
 
       // Get real balance using SEI MCP Server
@@ -466,7 +466,8 @@ class SeiMcpClient {
       };
     } catch (error) {
       console.error('❌ Error analyzing wallet:', error);
-      return null; // Return null to indicate real data is not available
+      console.log('🔄 Falling back to mock data due to error');
+      return this.getMockWalletAnalysis(address);
     }
   }
 

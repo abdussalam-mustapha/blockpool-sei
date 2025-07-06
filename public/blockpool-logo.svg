@@ -1,0 +1,18 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="diamondGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Left diamond -->
+  <path d="M4 20 L10 14 L16 20 L10 26 Z" fill="url(#diamondGradient)" rx="2"/>
+  
+  <!-- Center diamond (larger) -->
+  <path d="M14 20 L20 12 L26 20 L20 28 Z" fill="url(#diamondGradient)" rx="3"/>
+  
+  <!-- Right diamond -->
+  <path d="M24 20 L30 14 L36 20 L30 26 Z" fill="url(#diamondGradient)" rx="2"/>
+</svg>

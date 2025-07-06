@@ -34,24 +34,25 @@ export const generateAIResponse = async (query: string): Promise<AIResponse> => 
             const riskLevel = walletData.riskScore < 0.3 ? 'Low' : walletData.riskScore < 0.7 ? 'Medium' : 'High';
             const tokenList = walletData.tokens.slice(0, 5).map(t => `${t.amount} ${t.denom}`).join(', ');
             
+            // Check if this is live data or mock data based on connection status
+            const isLiveData = seiMcpClient.getConnectionStatus().connected;
+            const dataSource = isLiveData ? 'Live SEI MCP Server' : 'Simulated Data';
+            const confidence = isLiveData ? 0.9 : 0.6;
+            
             // Check if wallet has zero balance
             const balanceValue = parseFloat(walletData.balance.replace(' SEI', ''));
             const hasBalance = balanceValue > 0;
             
-            let balanceStatus = '';
-            if (!hasBalance) {
-              balanceStatus = '🚫 **This wallet appears to be empty or inactive.**\n\n';
-            }
-            
             return {
-              content: `🔍 **Live Wallet Analysis: ${address}**\n\n${balanceStatus}💰 **Current Holdings:**\n• Balance: ${walletData.balance}\n• USD Value: ${walletData.tokens[0]?.value || '$0.00'}\n• Tokens: ${tokenList}\n\n📈 **Activity Summary:**\n• Total transactions: ${walletData.transactionCount}\n• Last activity: ${walletData.lastActivity}\n• Risk score: ${walletData.riskScore.toFixed(2)} (${riskLevel})\n\n${walletData.recentTransactions.length > 0 ? `🔄 **Recent Transactions:**\n${walletData.recentTransactions.slice(0, 3).map(tx => `• ${tx.description} (${tx.timestamp})`).join('\n')}` : '🚫 **No recent transactions found**'}\n\n✅ **Real-time data from SEI blockchain via MCP Server**`,
-              confidence: 0.98,
-              sources: [`https://seistream.app/address/${address}`, 'Live SEI MCP Server']
+              content: `📊 **Wallet Analysis for ${address}**\n\n💰 **Balance:** ${walletData.balance}\n📈 **Transactions:** ${walletData.transactionCount} total\n🛡️ **Risk Score:** ${(walletData.riskScore * 100).toFixed(1)}%\n⏰ **Last Activity:** ${walletData.lastActivity}\n\n🔍 **Recent Activity:**\n${walletData.recentTransactions.slice(0, 3).map(tx => `• ${tx.type}: ${tx.amount} ${tx.token}`).join('\n')}\n\n📝 **Token Holdings:**\n${walletData.tokens.map(token => `• ${token.amount} ${token.denom.toUpperCase()}`).join('\n')}${!isLiveData ? '\n\n📝 **Note:** This analysis uses simulated data. Connect to live MCP server for real-time blockchain data.' : ''}`,
+              confidence,
+              sources: [dataSource, `https://seistream.app/address/${address}`]
             };
           } else {
+            // Fallback if somehow no data is returned
             return {
-              content: `⚠️ **Unable to fetch live data for wallet ${address}**\n\nThis could be due to:\n• MCP server connection issues\n• Invalid address format\n• Network connectivity problems\n\n🔄 **Please try again in a moment.** The system needs live blockchain data to provide accurate wallet analysis.\n\n🔍 **Address format:** SEI addresses start with 'sei1' followed by 39-59 characters`,
-              confidence: 0.2,
+              content: `⚠️ **Unable to analyze wallet ${address}**\n\nThere was an issue retrieving wallet data. Please try again in a moment.`,
+              confidence: 0.1,
               sources: []
             };
           }

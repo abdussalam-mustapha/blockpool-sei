@@ -37,7 +37,7 @@ const Header = () => {
         <div className="flex items-center space-x-8">
           <div className="flex items-center space-x-3">
             <img 
-              src="/lovable-uploads/337ff584-1631-4788-98f0-5d71989f7c8c.png" 
+              src="/blockpool-logo.svg" 
               alt="Blockpool Logo" 
               className="w-8 h-8"
             />
