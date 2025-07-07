@@ -1,63 +1,149 @@
-# Welcome to your Lovable project
+<p align="center">
+  <img src="public/blockpool-logo.svg" alt="Blockpool Logo" width="120"/>
+</p>
 
-## Project info
+# 🔷 Blockpool: Your AI-Powered DeFi Gateway on SEI
 
-**URL**: https://lovable.dev/projects/57f8e2d1-ee31-40f6-991e-d0d45b57d090
+**Blockpool** is your decentralized co-pilot, empowering crypto users with AI-driven DeFi tools, secure smart agents, and a community-first experience — all seamlessly integrated with the SEI EVM network.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🚀 Platform Overview
 
-**Use Lovable**
+Blockpool transforms how everyday users interact with DeFi by introducing intelligent on-chain agents and a conversational AI dashboard that automate, protect, and optimize your crypto actions.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/57f8e2d1-ee31-40f6-991e-d0d45b57d090) and start prompting.
+Unlike traditional DeFi dashboards, Blockpool is:
+- **Personalized**: Each user has their own analytics and agent interface.
+- **Autonomous**: AI-driven recommendations, monitoring, and execution.
+- **Real-Time**: Live data from SEI EVM and EVM-compatible addresses.
+- **Transparent**: Full ownership and control, with on-chain logs and user-defined permissions.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 🧠 Core Highlights
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+| Feature                  | Description                                                                                 |
+|--------------------------|---------------------------------------------------------------------------------------------|
+| 🔐 Personal Smart Agents | Each user gets a dedicated agent contract — private, secure, and owned by your wallet.      |
+| ⚙️ Strategy Automation   | Automate rebalancing, staking, risk hedging, or stablecoin shifting based on your goals.    |
+| 💬 Conversational UX     | Just chat: “Protect my assets,” “Stake unused tokens,” or “Pause activity.”                 |
+| ⚡ SEI Native             | Lightning-fast finality, low latency, and high throughput — optimized for SEI EVM.          |
+| 🛡️ Security-First        | You define scope, permissions, and kill switches. Full control, no compromises.             |
+| 🤝 Community Engine       | Evolving with collective feedback, strategies, and user-provided vaults.                    |
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🔧 How It Works
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. **Deploy Your Copilot**
+   - Connect your wallet (MetaMask, Keplr, etc.)
+   - Click “Launch My Agent”
+   - Deploys your personal smart agent tied to your wallet
+   - Approve access scopes (stake, swap, balance movement)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. **Pick a Strategy Mode**
+   - **Safe Mode**: Focuses on risk minimization, collateral safety.
+   - **Yield Boost**: Targets best returns across SEI protocols.
+   - **Chill Mode**: Keeps you in stables and earns passively.
 
-# Step 3: Install the necessary dependencies.
-npm i
+3. **Live Monitoring**
+   - Agent checks your portfolio 24/7
+   - Alerts on risks, unused capital, high-yield shifts
+   - Feeds powered by Chainlink, SeiScan, DeFiLlama, and SEI MCP
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. **Automated Execution**
+   - Swap/stake/move based on your strategy
+   - Repay loans, hedge, or farm — autonomously
+   - Logs every action transparently on-chain
+
+5. **AI Chat Control**
+   - Speak naturally:  
+     - “Switch to Safe Mode.”  
+     - “Move idle SEI to top-yield vaults.”  
+     - “Pause everything.”
+   - Your agent responds with confirmations, insights, and historical logs.
+
+---
+
+## 🔥 What Makes Blockpool Different?
+
+| Feature                 | Legacy Tools | Blockpool |
+|-------------------------|:-----------:|:---------:|
+| Manual dashboards       |      ✅      |     ❌     |
+| Shared vaults           |      ✅      |     ❌     |
+| Real-time AI control    |      ❌      |     ✅     |
+| Per-user agent          |      ❌      |     ✅     |
+| SEI EVM native          |      ❌      |     ✅     |
+| Security switch         |      ❌      |     ✅     |
+| Community vault voting  |      ❌      |     ✅     |
+
+---
+
+## 💬 Sample Commands
+
+- “What’s my net yield today?”
+- “Show me idle tokens.”
+- “Prepare for volatility — switch to Safe.”
+- “Log recent strategy changes.”
+
+---
+
+## 🧠 Agent Memory & User Config
+
+| Key             | Purpose                                    |
+|-----------------|--------------------------------------------|
+| strategyMode    | Your selected strategy (Safe, Yield, Chill)|
+| approvedActions | Actions your agent can take                |
+| alerts          | Risk and performance alerts                |
+| pauseStatus     | Whether automation is active               |
+
+---
+
+## ✅ Use Cases
+
+- Protecting portfolios in volatile markets
+- Automating yield-farming across protocols
+- Earning passively without constant monitoring
+- Providing AI help for crypto beginners
+- Community-curated strategies & vaults
+
+---
+
+## 🧩 Vision Statement
+
+**Blockpool is your AI-secured DeFi co-pilot — built for every crypto user. Designed for autonomy, driven by intelligence, and strengthened by community.**
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
+- **Blockchain Integration:** SEI MCP server (live & mock data), EVM & SEI address support
+- **AI & Analytics:** Real-time wallet analysis, risk scoring, conversational agent
+- **Wallets:** Keplr, MetaMask, Compass, Fin
+- **Live Data:** Chainlink, SeiScan, DeFiLlama, SEI MCP
+
+---
+
+## 🌐 Quick Start
+
+```bash
+git clone https://github.com/abdussalam-mustapha/blockpool-sei.git
+cd blockpool-sei
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open [http://localhost:8080](http://localhost:8080) and connect your wallet to get started!
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 🤝 Join the Community
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
+- [GitHub](https://github.com/abdussalam-mustapha/blockpool-sei)
+- [Twitter/X](https://x.com/blockpoolHQ)
+- [Telegram](https://t.me/+xp5fkmRwMYplOTM0)
+- [Live App](https://blockpool-sei.vercel.app)
 - Tailwind CSS
 
 ## How can I deploy this project?
