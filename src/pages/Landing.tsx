@@ -99,7 +99,7 @@ const Landing = () => {
         <div className="text-center max-w-4xl mx-auto">
           <Badge className="mb-6 px-4 py-2 bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30">
             <Rocket className="mr-2 h-4 w-4" />
-            Powered by Sei-mcp-server
+            Powered by Sei-mcp-kit
           </Badge>
           
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-green-400 to-green-500 bg-clip-text text-transparent leading-tight">
