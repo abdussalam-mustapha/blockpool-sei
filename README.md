@@ -142,4 +142,4 @@ Open [http://localhost:8080](http://localhost:8080) and connect your wallet to g
 - [Live App](https://blockpool-sei.vercel.app)
 - Tailwind CSS
 
-The modified MCP-Kit is available at [https://sei-mcp-server-1.onrender.com](https://sei-mcp-server-1.onrender.com) and is used for live data fetching. also check out the repository at [https://github.com/abdussalam-mustapha/sei-mcp-server](https://github.com/abdussalam-mustapha/sei-mcp-server)
+The modified MCP-Kit is available at [https://sei-mcp-server-1.onrender.com](https://sei-mcp-server-1.onrender.com) and is used for live data fetching. also check out the repository at [https://github.com/abdussalam-mustapha/sei-mcp-server](https://github.com/abdussalam-mustapha/sei-mcp-server).
