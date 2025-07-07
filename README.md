@@ -2,126 +2,122 @@
   <img src="public/blockpool-logo.svg" alt="Blockpool Logo" width="120"/>
 </p>
 
-# 🔷 Blockpool: Your AI-Powered DeFi Gateway on SEI
+# 🔷 Blockpool: AI-Powered Blockchain Analytics Dashboard
 
-**Blockpool** is your decentralized co-pilot, empowering crypto users with AI-driven DeFi tools, secure smart agents, and a community-first experience — all seamlessly integrated with the SEI EVM network.
+**Blockpool** is an intelligent blockchain analytics platform that provides real-time monitoring, AI-powered insights, and comprehensive wallet analysis for the SEI ecosystem and EVM-compatible networks.
 
 ---
 
 ## 🚀 Platform Overview
 
-Blockpool transforms how everyday users interact with DeFi by introducing intelligent on-chain agents and a conversational AI dashboard that automate, protect, and optimize your crypto actions.
+Blockpool transforms blockchain data into actionable insights through an intuitive dashboard that combines real-time monitoring, AI-powered analysis, and conversational interfaces.
 
-Unlike traditional DeFi dashboards, Blockpool is:
-- **Personalized**: Each user has their own analytics and agent interface.
-- **Autonomous**: AI-driven recommendations, monitoring, and execution.
-- **Real-Time**: Live data from SEI EVM and EVM-compatible addresses.
-- **Transparent**: Full ownership and control, with on-chain logs and user-defined permissions.
+Key capabilities:
+- **Real-Time Analytics**: Live blockchain data from SEI and EVM networks
+- **AI-Powered Insights**: Intelligent analysis of wallet activities, transactions, and market trends
+- **Conversational Interface**: Chat with AI to get instant blockchain insights
+- **Multi-Wallet Support**: Connect with Keplr, MetaMask, Compass, and Fin wallets
+- **Live Transaction Feed**: Real-time monitoring of blockchain events and activities
 
 ---
 
-## 🧠 Core Highlights
+## 🧠 Core Features
 
 | Feature                  | Description                                                                                 |
 |--------------------------|---------------------------------------------------------------------------------------------|
-| 🔐 Personal Smart Agents | Each user gets a dedicated agent contract — private, secure, and owned by your wallet.      |
-| ⚙️ Strategy Automation   | Automate rebalancing, staking, risk hedging, or stablecoin shifting based on your goals.    |
-| 💬 Conversational UX     | Just chat: “Protect my assets,” “Stake unused tokens,” or “Pause activity.”                 |
-| ⚡ SEI Native             | Lightning-fast finality, low latency, and high throughput — optimized for SEI EVM.          |
-| 🛡️ Security-First        | You define scope, permissions, and kill switches. Full control, no compromises.             |
-| 🤝 Community Engine       | Evolving with collective feedback, strategies, and user-provided vaults.                    |
+| 📊 Live Dashboard        | Real-time analytics widgets showing wallet balances, transactions, and market data         |
+| 🤖 AI Assistant          | Conversational AI that analyzes wallets, provides insights, and answers blockchain queries |
+| 📡 Live Feed             | Real-time stream of blockchain events, transactions, and network activities                |
+| 🔍 Wallet Analysis       | Comprehensive analysis of wallet holdings, transaction history, and risk assessment        |
+| ⚡ SEI Integration        | Native support for SEI blockchain with EVM compatibility                                   |
+| 🎯 Risk Scoring          | AI-powered risk analysis for addresses, contracts, and transactions                        |
 
 ---
 
 ## 🔧 How It Works
 
-1. **Deploy Your Copilot**
-   - Connect your wallet (MetaMask, Keplr, etc.)
-   - Click “Launch My Agent”
-   - Deploys your personal smart agent tied to your wallet
-   - Approve access scopes (stake, swap, balance movement)
+1. **Connect Your Wallet**
+   - Support for Keplr, MetaMask, Compass, and Fin wallets
+   - Secure connection with read-only access
+   - Multi-network support (SEI, Ethereum, other EVM chains)
 
-2. **Pick a Strategy Mode**
-   - **Safe Mode**: Focuses on risk minimization, collateral safety.
-   - **Yield Boost**: Targets best returns across SEI protocols.
-   - **Chill Mode**: Keeps you in stables and earns passively.
+2. **Real-Time Monitoring**
+   - Live dashboard with key metrics and analytics
+   - Transaction feed with real-time blockchain events
+   - Automated alerts for significant activities
 
-3. **Live Monitoring**
-   - Agent checks your portfolio 24/7
-   - Alerts on risks, unused capital, high-yield shifts
-   - Feeds powered by Chainlink, SeiScan, DeFiLlama, and SEI MCP
+3. **AI-Powered Analysis**
+   - Chat interface for natural language queries
+   - Intelligent wallet and transaction analysis
+   - Risk assessment and security insights
 
-4. **Automated Execution**
-   - Swap/stake/move based on your strategy
-   - Repay loans, hedge, or farm — autonomously
-   - Logs every action transparently on-chain
-
-5. **AI Chat Control**
-   - Speak naturally:  
-     - “Switch to Safe Mode.”  
-     - “Move idle SEI to top-yield vaults.”  
-     - “Pause everything.”
-   - Your agent responds with confirmations, insights, and historical logs.
+4. **Data Visualization**
+   - Interactive charts and graphs
+   - Portfolio breakdown and performance metrics
+   - Historical data analysis and trends
 
 ---
 
 ## 🔥 What Makes Blockpool Different?
 
-| Feature                 | Legacy Tools | Blockpool |
-|-------------------------|:-----------:|:---------:|
-| Manual dashboards       |      ✅      |     ❌     |
-| Shared vaults           |      ✅      |     ❌     |
-| Real-time AI control    |      ❌      |     ✅     |
-| Per-user agent          |      ❌      |     ✅     |
-| SEI EVM native          |      ❌      |     ✅     |
-| Security switch         |      ❌      |     ✅     |
-| Community vault voting  |      ❌      |     ✅     |
+| Feature                 | Traditional Tools | Blockpool |
+|-------------------------|:-----------------:|:---------:|
+| Static dashboards       |        ✅         |     ❌     |
+| Manual data analysis    |        ✅         |     ❌     |
+| AI-powered insights     |        ❌         |     ✅     |
+| Conversational interface|        ❌         |     ✅     |
+| Real-time monitoring    |        ❌         |     ✅     |
+| SEI native support      |        ❌         |     ✅     |
+| Multi-wallet integration|        ❌         |     ✅     |
 
 ---
 
-## 💬 Sample Commands
+## 💬 Sample AI Queries
 
-- “What’s my net yield today?”
-- “Show me idle tokens.”
-- “Prepare for volatility — switch to Safe.”
-- “Log recent strategy changes.”
+- "Analyze my wallet performance this week"
+- "What are the risks in my current holdings?"
+- "Show me recent large transactions on SEI"
+- "Explain this transaction hash"
+- "What tokens should I watch today?"
 
 ---
 
-## 🧠 Agent Memory & User Config
+## 📊 Analytics Features
 
-| Key             | Purpose                                    |
-|-----------------|--------------------------------------------|
-| strategyMode    | Your selected strategy (Safe, Yield, Chill)|
-| approvedActions | Actions your agent can take                |
-| alerts          | Risk and performance alerts                |
-| pauseStatus     | Whether automation is active               |
+| Component           | Purpose                                        |
+|---------------------|------------------------------------------------|
+| Portfolio Overview  | Real-time balance and asset distribution      |
+| Transaction History | Detailed transaction analysis and categorization|
+| Risk Assessment     | AI-powered security and risk scoring          |
+| Market Insights     | Token prices, trends, and market analysis     |
+| Live Events         | Real-time blockchain activity monitoring      |
 
 ---
 
 ## ✅ Use Cases
 
-- Protecting portfolios in volatile markets
-- Automating yield-farming across protocols
-- Earning passively without constant monitoring
-- Providing AI help for crypto beginners
-- Community-curated strategies & vaults
+- **Portfolio Monitoring**: Track wallet performance and asset allocation
+- **Risk Management**: Identify potential security risks and suspicious activities
+- **Market Research**: Analyze token trends and blockchain activity
+- **Transaction Analysis**: Deep-dive into transaction patterns and behaviors
+- **Educational Tool**: Learn about blockchain through AI-powered explanations
 
 ---
 
 ## 🧩 Vision Statement
 
-**Blockpool is your AI-secured DeFi co-pilot — built for every crypto user. Designed for autonomy, driven by intelligence, and strengthened by community.**
+**Blockpool democratizes blockchain analytics by making complex on-chain data accessible through AI-powered insights and intuitive interfaces.**
 
 ---
 
 ## 🛠️ Tech Stack
 
 - **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
-- **Blockchain Integration:** SEI MCP server (live & mock data), EVM & SEI address support
-- **AI & Analytics:** Real-time wallet analysis, risk scoring, conversational agent
-- **Wallets:** Keplr, MetaMask, Compass, Fin
-- **Live Data:** Chainlink, SeiScan, DeFiLlama, SEI MCP
+- **Blockchain Integration:** SEI MCP Kit, EVM & SEI address support
+- **AI & Analytics:** Real-time wallet analysis, risk scoring, conversational AI
+- **Wallets:** Keplr, MetaMask, Compass, Fin wallet integration
+- **Data Sources:** SEI blockchain, EVM networks, real-time transaction feeds
+- **UI Components:** 49+ shadcn/ui components, responsive design, dark theme
 
 ---
 
