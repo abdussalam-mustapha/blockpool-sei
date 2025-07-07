@@ -76,7 +76,7 @@ class SeiMcpClient {
   private sessionId: string | null = null;
   private connectionStatus: ConnectionStatus = { connected: false, attempts: 0 };
 
-  constructor(serverUrl: string = 'http://localhost:3004') {
+  constructor(serverUrl: string = 'https://sei-mcp-server-1.onrender.com') {
     this.baseUrl = serverUrl;
   }
 
