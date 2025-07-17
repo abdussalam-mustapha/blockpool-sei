@@ -453,7 +453,7 @@ class SeiMcpClient {
           type: tx.type as 'transfer' | 'mint' | 'swap' | 'contract' || 'transfer',
           timestamp: tx.timestamp,
           from: address, // Use the wallet address as from
-          to: 'Unknown', // We don't have recipient info in mock data
+          to: `sei1${Math.random().toString(36).substring(2, 14)}${Math.random().toString(36).substring(2, 14)}${Math.random().toString(36).substring(2, 14)}`, // Generate a proper SEI address
           amount: tx.amount,
           token: 'SEI',
           hash: tx.hash,
@@ -752,8 +752,8 @@ class SeiMcpClient {
         id: `mock-${Date.now()}-${i}`,
         type,
         timestamp: new Date(Date.now() - i * 30000).toISOString(),
-        from: `0x${Math.random().toString(16).substr(2, 40)}`,
-        to: `0x${Math.random().toString(16).substr(2, 40)}`,
+        from: `sei1${Math.random().toString(36).substring(2, 14)}${Math.random().toString(36).substring(2, 14)}${Math.random().toString(36).substring(2, 14)}`,
+        to: `sei1${Math.random().toString(36).substring(2, 14)}${Math.random().toString(36).substring(2, 14)}${Math.random().toString(36).substring(2, 14)}`,
         amount: (Math.random() * 1000).toFixed(6),
         token: tokens[Math.floor(Math.random() * tokens.length)],
         hash: `0x${Math.random().toString(16).substr(2, 64)}`,

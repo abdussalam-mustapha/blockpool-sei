@@ -75,51 +75,84 @@ const TransactionDetailsModal = ({ transaction, isOpen, onClose }: TransactionDe
           )}
 
           {transaction.from && (
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">From:</span>
-              <div className="flex items-center space-x-2">
-                <span className="text-white text-sm font-mono">{transaction.from.slice(0, 12)}...</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => copyToClipboard(transaction.from || '')}
-                  className="h-6 w-6 p-0 hover:bg-green-500/20"
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
+            <div className="flex flex-col space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">From:</span>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => copyToClipboard(transaction.from || '')}
+                    className="h-6 p-1 hover:bg-green-500/20 text-xs"
+                    title="Copy address"
+                  >
+                    <Copy className="w-3 h-3 mr-1" /> Copy
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => window.open(`https://seistream.app/address/${transaction.from}`, '_blank')}
+                    className="h-6 p-1 hover:bg-green-500/20 text-xs"
+                    title="View on explorer"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" /> View
+                  </Button>
+                </div>
+              </div>
+              <div className="bg-gray-900 p-2 rounded-md">
+                <span className="text-white text-sm font-mono break-all">{transaction.from}</span>
               </div>
             </div>
           )}
 
           {transaction.to && (
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400">To:</span>
-              <div className="flex items-center space-x-2">
-                <span className="text-white text-sm font-mono">{transaction.to.slice(0, 12)}...</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => copyToClipboard(transaction.to || '')}
-                  className="h-6 w-6 p-0 hover:bg-green-500/20"
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
+            <div className="flex flex-col space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">To:</span>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => copyToClipboard(transaction.to || '')}
+                    className="h-6 p-1 hover:bg-green-500/20 text-xs"
+                    title="Copy address"
+                  >
+                    <Copy className="w-3 h-3 mr-1" /> Copy
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => window.open(`https://seistream.app/address/${transaction.to}`, '_blank')}
+                    className="h-6 p-1 hover:bg-green-500/20 text-xs"
+                    title="View on explorer"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" /> View
+                  </Button>
+                </div>
+              </div>
+              <div className="bg-gray-900 p-2 rounded-md">
+                <span className="text-white text-sm font-mono break-all">{transaction.to}</span>
               </div>
             </div>
           )}
 
-          <div className="flex items-center justify-between">
-            <span className="text-gray-400">Transaction Hash:</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-white text-sm font-mono">{transaction.txHash}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => copyToClipboard(transaction.txHash)}
-                className="h-6 w-6 p-0 hover:bg-green-500/20"
-              >
-                <Copy className="w-3 h-3" />
-              </Button>
+          <div className="flex flex-col space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Transaction Hash:</span>
+              <div className="flex items-center space-x-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => copyToClipboard(transaction.txHash)}
+                  className="h-6 p-1 hover:bg-green-500/20 text-xs"
+                  title="Copy transaction hash"
+                >
+                  <Copy className="w-3 h-3 mr-1" /> Copy
+                </Button>
+              </div>
+            </div>
+            <div className="bg-gray-900 p-2 rounded-md">
+              <span className="text-white text-sm font-mono break-all">{transaction.txHash}</span>
             </div>
           </div>
 
