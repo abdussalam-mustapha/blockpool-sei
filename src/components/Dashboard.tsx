@@ -148,7 +148,7 @@ const Dashboard = () => {
               ⚠️ Unable to connect to SEI MCP Server. Some features may use simulated data.
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              Ensure the MCP server is running on localhost:3004 or check your connection.
+              Unable to connect to the SEI MCP Server. Please check your network connection and try again.
             </p>
           </div>
         )}
