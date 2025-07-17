@@ -212,7 +212,7 @@ const AnalyticsWidgets = () => {
         ];
         
         setWidgets(simulatedData);
-        setLastUpdate('Demo data');
+        setLastUpdate('now');
       }
     } catch (error) {
       console.error('Error fetching analytics data:', error);
