@@ -78,7 +78,7 @@ class LegacySeiMcpClient {
   private connectionStatus: ConnectionStatus = { connected: false, attempts: 0 };
   private initPromise: Promise<void>;
 
-  constructor(serverUrl: string = 'http://localhost:3004') {
+  constructor(serverUrl: string = 'https://sei-mcp-server-1.onrender.com') {
     // Import the new client dynamically to avoid circular imports
     this.initPromise = import('../lib/sei-mcp-client').then(({ SeiMCPClient }) => {
       this.client = new SeiMCPClient({

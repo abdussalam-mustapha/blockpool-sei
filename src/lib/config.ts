@@ -20,7 +20,7 @@ export interface MCPClientConfig {
 
 export const DEFAULT_CONFIG: MCPClientConfig = {
   server: {
-    url: 'http://localhost:3004',
+    url: 'https://sei-mcp-server-1.onrender.com',
     timeout: 15000,
   },
   network: {
