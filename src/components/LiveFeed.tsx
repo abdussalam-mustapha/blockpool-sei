@@ -1,239 +1,328 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import TransactionDetailsModal from './TransactionDetailsModal';
 import { seiMcpClient, type BlockchainEvent } from '@/services/seiMcpClient';
 
 const LiveFeed = () => {
   const [feedItems, setFeedItems] = useState<BlockchainEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<BlockchainEvent | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<string>('connecting');
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Simple constants - no chunking, no pagination
+  const MAX_ITEMS = 10; // Only show 10 most recent items
 
-  useEffect(() => {
-    // Initialize MCP connection
-    const initializeMcp = async () => {
-      try {
-        await seiMcpClient.connect();
-        setConnectionStatus('connected');
-        
-        // Load initial events
-        const events = await seiMcpClient.getRecentBlockchainEvents();
+  // Simple function to load initial data once
+  const loadInitialData = async () => {
+    if (isLoading) return;
+    
+    console.log('🚀 LiveFeed: Loading initial 10 blockchain events...');
+    setIsLoading(true);
+    
+    try {
+      const events = await seiMcpClient.getRecentBlockchainEvents(MAX_ITEMS);
+      
+      if (events && events.length > 0) {
         setFeedItems(events);
-      } catch (error) {
-        console.error('Failed to connect to MCP server:', error);
+        setConnectionStatus('connected');
+        console.log(`✅ LiveFeed: Loaded ${events.length} blockchain events`);
+      } else {
+        console.log('⚠️ LiveFeed: No events available');
         setConnectionStatus('error');
       }
-    };
-
-    initializeMcp();
-
-    // Listen for real-time blockchain events
-    const handleBlockchainEvent = (event: BlockchainEvent) => {
-      if (!isPaused) {
-        setFeedItems(prev => [event, ...prev.slice(0, 49)]); // Keep last 50 items
-      }
-    };
-
-    // Listen for connection status changes
-    const handleConnectionChange = (status: any) => {
-      setConnectionStatus(status.status);
-    };
-
-    seiMcpClient.on('blockchainEvent', handleBlockchainEvent);
-    seiMcpClient.on('connection', handleConnectionChange);
-
-    // Poll for new events every 2 minutes to drastically reduce server load
-    const pollInterval = setInterval(async () => {
-      if (connectionStatus === 'connected' && !isPaused) {
-        try {
-          console.log('🔄 Polling for new blockchain events (every 2 minutes)...');
-          const events = await seiMcpClient.getRecentBlockchainEvents();
-          // Only add new events (check if they don't already exist)
-          const newEvents = events.filter(event => 
-            !feedItems.some(existing => existing.id === event.id)
-          );
-          if (newEvents.length > 0) {
-            setFeedItems(prev => [...newEvents, ...prev].slice(0, 50));
-          }
-        } catch (error) {
-          console.error('Error polling for events:', error);
-          // Don't disconnect on polling errors, just log them
-        }
-      }
-    }, 120000); // Poll every 2 minutes (120 seconds)
-
-    // Cleanup
-    return () => {
-      seiMcpClient.off('blockchainEvent', handleBlockchainEvent);
-      seiMcpClient.off('connection', handleConnectionChange);
-      clearInterval(pollInterval);
-    };
-  }, [isPaused, connectionStatus, feedItems]);
-
-  // Fallback simulation for demo purposes when MCP is not available
-  useEffect(() => {
-    if (connectionStatus === 'error' && !isPaused) {
-      const interval = setInterval(() => {
-        const simulatedEvent: BlockchainEvent = {
-          id: Math.random().toString(),
-          type: ['transfer', 'mint', 'swap', 'contract'][Math.floor(Math.random() * 4)] as any,
-          timestamp: new Date().toISOString(),
-          from: `0x${Math.random().toString(16).substr(2, 40)}`,
-          to: `0x${Math.random().toString(16).substr(2, 40)}`,
-          amount: (Math.random() * 1000).toFixed(6),
-          token: ['SEI', 'USDC', 'SEIYAN', 'WETH'][Math.floor(Math.random() * 4)],
-          hash: `0x${Math.random().toString(16).substr(2, 64)}`,
-          gasUsed: Math.floor(Math.random() * 100000).toString(),
-          gasPrice: (Math.random() * 50).toFixed(2),
-          blockNumber: Math.floor(Math.random() * 1000000) + 5000000,
-          status: Math.random() > 0.1 ? 'success' : 'failed',
-          description: [
-            'Token transfer detected',
-            'NFT minted on Palette',
-            'DEX swap on DragonSwap',
-            'Smart contract interaction',
-            'Large whale movement',
-            'New token pair created'
-          ][Math.floor(Math.random() * 6)],
-          txHash: `0x${Math.random().toString(16).substring(2, 10)}`,
-          blockHeight: Math.floor(Math.random() * 1000000) + 5000000,
-          fee: `${(Math.random() * 0.01).toFixed(4)} SEI`
-        };
-
-        setFeedItems(prev => [simulatedEvent, ...prev.slice(0, 49)]);
-      }, 3000);
-
-      return () => clearInterval(interval);
+    } catch (error) {
+      console.error('❌ LiveFeed: Error loading data:', error);
+      setConnectionStatus('error');
+    } finally {
+      setIsLoading(false);
     }
-  }, [connectionStatus, isPaused]);
+  };
+
+  // Load initial data on mount
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  // Simple periodic refresh (every 2 minutes)
+  useEffect(() => {
+    if (!isPaused && connectionStatus === 'connected') {
+      intervalRef.current = setInterval(() => {
+        console.log('🔄 LiveFeed: Refreshing data...');
+        loadInitialData();
+      }, 120000); // 2 minutes
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
+    }
+  }, [isPaused, connectionStatus]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  const handlePauseToggle = () => {
+    setIsPaused(!isPaused);
+    console.log(`⏯️ LiveFeed: ${isPaused ? 'Resumed' : 'Paused'}`);
+  };
+
+  const handleRefresh = () => {
+    console.log('🔄 LiveFeed: Manual refresh triggered');
+    loadInitialData();
+  };
+
+  const handleViewDetails = (transaction: BlockchainEvent) => {
+    setSelectedTransaction(transaction);
+  };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'transfer': return 'bg-blue-500/20 text-blue-400';
-      case 'mint': return 'bg-green-500/20 text-green-400';
-      case 'swap': return 'bg-yellow-500/20 text-yellow-400';
-      case 'contract': return 'bg-purple-500/20 text-purple-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+      case 'transfer': return 'bg-green-500/10 text-green-400 border-green-500/30';
+      case 'mint': return 'bg-green-600/10 text-green-300 border-green-600/30';
+      case 'swap': return 'bg-green-400/10 text-green-500 border-green-400/30';
+      case 'contract': return 'bg-green-700/10 text-green-200 border-green-700/30';
+      default: return 'bg-green-500/10 text-green-400 border-green-500/30';
     }
   };
 
-  const getConnectionStatusColor = () => {
-    switch (connectionStatus) {
-      case 'connected': return 'bg-green-400';
-      case 'connecting': return 'bg-yellow-400';
-      case 'error': return 'bg-red-400';
-      default: return 'bg-gray-400';
+  const formatTimestamp = (timestamp: string) => {
+    try {
+      return new Date(timestamp).toLocaleTimeString();
+    } catch {
+      return 'Invalid time';
     }
   };
 
-  const getConnectionStatusText = () => {
-    switch (connectionStatus) {
-      case 'connected': return 'Live SEI MCP Feed';
-      case 'connecting': return 'Connecting to MCP...';
-      case 'error': return 'Demo Mode (MCP Offline)';
-      default: return 'Unknown Status';
+  const formatAmount = (amount: string) => {
+    try {
+      const num = parseFloat(amount);
+      return num > 1000 ? `${(num / 1000).toFixed(1)}K` : num.toFixed(2);
+    } catch {
+      return amount;
     }
   };
 
-  const handleViewDetails = (item: BlockchainEvent) => {
-    setSelectedTransaction(item);
-    setIsModalOpen(true);
+  const truncateAddress = (address: string, startChars = 6, endChars = 4) => {
+    if (!address || address.length <= startChars + endChars) return address;
+    return `${address.slice(0, startChars)}...${address.slice(-endChars)}`;
   };
 
   return (
-    <>
-      <Card className="glass-card p-6 h-full">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white flex items-center">
-            <div className={`w-2 h-2 rounded-full mr-2 ${getConnectionStatusColor()} ${connectionStatus === 'connected' ? 'animate-pulse' : ''}`}></div>
-            {getConnectionStatusText()}
-          </h3>
+    <Card className="p-4 bg-black border border-green-500/40">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">Live Blockchain Feed</h3>
+        <div className="flex items-center space-x-2">
+          <div className={`w-2 h-2 rounded-full ${
+            connectionStatus === 'connected' ? 'bg-green-400 animate-pulse' : 
+            connectionStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400'
+          }`}></div>
+          <span className="text-xs text-green-400 capitalize">{connectionStatus}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex space-x-2">
+          <Button
+            onClick={handlePauseToggle}
+            variant="outline"
+            size="sm"
+            className="text-xs border-green-500/40 hover:border-green-500/60 bg-black text-green-400 hover:bg-green-500/10"
+          >
+            {isPaused ? '▶️ Resume' : '⏸️ Pause'}
+          </Button>
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            className="text-xs border-green-500/40 hover:border-green-500/60 bg-black text-green-400 hover:bg-green-500/10"
+            disabled={isLoading}
+          >
+            {isLoading ? '⏳ Loading...' : '🔄 Refresh'}
+          </Button>
+        </div>
+        <span className="text-xs text-green-400">
+          Showing {feedItems.length} recent transactions
+        </span>
+      </div>
+
+      {connectionStatus === 'error' && (
+        <div className="mb-3 p-3 bg-red-500/10 border border-red-500/40 rounded-lg text-red-400 text-sm">
           <div className="flex items-center space-x-2">
-            <Button
-              onClick={() => setIsPaused(!isPaused)}
-              variant="outline"
-              size="sm"
-              className="border-green-600/50 hover:border-green-500 bg-black"
-            >
-              {isPaused ? 'Resume' : 'Pause'}
-            </Button>
-            {connectionStatus === 'error' && (
-              <Button
-                onClick={() => window.location.reload()}
-                variant="outline"
-                size="sm"
-                className="border-yellow-600/50 hover:border-yellow-500 bg-black text-yellow-400"
-              >
-                Retry MCP
-              </Button>
-            )}
+            <span className="text-red-400">⚠️</span>
+            <p>MCP Server unavailable. No real blockchain data available.</p>
           </div>
         </div>
+      )}
 
-        {connectionStatus === 'error' && (
-          <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-            <p className="text-yellow-400 text-sm">
-              ⚠️ MCP Server unavailable. Showing simulated data for demo purposes.
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-3 overflow-y-auto max-h-96">
-          {feedItems.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              <p>Waiting for blockchain events...</p>
-              {connectionStatus === 'connecting' && (
-                <div className="mt-2">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-400 mx-auto"></div>
-                </div>
-              )}
+      <div className="space-y-3 overflow-y-auto max-h-96">
+        {feedItems.length === 0 ? (
+          <div className="text-center py-12 text-green-400/60">
+            <div className="mb-4">
+              <div className="w-16 h-16 mx-auto border-2 border-green-500/30 rounded-full flex items-center justify-center">
+                <span className="text-2xl">📊</span>
+              </div>
             </div>
-          ) : (
-            feedItems.map((item) => (
-              <div
-                key={item.id}
-                className="p-3 bg-black border border-green-500/30 rounded-lg hover:border-green-500/50 transition-colors"
+            <p className="text-lg font-medium mb-2">
+              {isLoading ? 'Loading blockchain events...' : 'No blockchain data available'}
+            </p>
+            <p className="text-sm text-green-400/40">
+              {isLoading ? 'Fetching real SEI blockchain data...' : 'Connect to MCP server to view live transactions'}
+            </p>
+            {isLoading && (
+              <div className="mt-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto"></div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {feedItems.map((item, index) => (
+              <div 
+                key={`${item.id}-${index}`}
+                className="p-4 bg-black border border-green-500/20 rounded-lg hover:border-green-500/40 transition-all duration-200 hover:shadow-lg hover:shadow-green-500/10"
+                style={{ transform: 'translateZ(0)', willChange: 'transform' }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(item.type)}`}>
-                    {item.type.toUpperCase()}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTypeColor(item.type)}`}>
+                      {item.type.toUpperCase()}
+                    </span>
+                    <span className="text-xs text-green-400/60">
+                      {formatTimestamp(item.timestamp)}
+                    </span>
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    item.status === 'success' ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {item.status === 'success' ? '✅' : '❌'}
                   </span>
-                  <span className="text-xs text-gray-400">{item.timestamp}</span>
                 </div>
                 
-                <p className="text-sm text-white mb-2">{item.description}</p>
+                <p className="text-sm text-white mb-3 truncate" title={item.description}>
+                  {item.description}
+                </p>
                 
-                {item.amount && (
-                  <p className="text-sm text-green-400 font-medium">{item.amount}</p>
-                )}
-
-                {item.blockHeight && (
-                  <p className="text-xs text-gray-400">Block: {item.blockHeight}</p>
-                )}
+                <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+                  <div className="text-green-400/60">
+                    From: <span className="text-green-400 font-mono">{truncateAddress(item.from)}</span>
+                  </div>
+                  <div className="text-green-400/60">
+                    To: <span className="text-green-400 font-mono">{truncateAddress(item.to)}</span>
+                  </div>
+                </div>
                 
-                <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
-                  <span>TX: {item.txHash}</span>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-4 text-green-400/60">
+                    <span className="text-white font-medium">{formatAmount(item.amount)} {item.token}</span>
+                    {item.fee && <span>Fee: {item.fee} SEI</span>}
+                    <span>Block: {item.blockNumber}</span>
+                  </div>
                   <button 
                     onClick={() => handleViewDetails(item)}
-                    className="text-green-400 hover:text-green-300 transition-colors cursor-pointer"
+                    className="text-green-400 hover:text-green-300 transition-colors font-medium px-2 py-1 rounded border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10"
                   >
                     View Details
                   </button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </Card>
+            ))}
+          </>
+        )}
+      </div>
 
-      <TransactionDetailsModal
-        transaction={selectedTransaction}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
-    </>
+      {selectedTransaction && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-black border border-green-500/40 p-6 rounded-lg max-w-lg w-full mx-4 shadow-2xl shadow-green-500/20">
+            <div className="flex items-center justify-between mb-6">
+              <h4 className="text-xl font-semibold text-white flex items-center space-x-2">
+                <span className="text-green-400">📊</span>
+                <span>Transaction Details</span>
+              </h4>
+              <button 
+                onClick={() => setSelectedTransaction(null)}
+                className="text-green-400/60 hover:text-green-400 transition-colors p-1 rounded hover:bg-green-500/10"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+                  <span className="text-green-400/60 block mb-1">Type</span>
+                  <span className="text-white font-medium">{selectedTransaction.type.toUpperCase()}</span>
+                </div>
+                <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+                  <span className="text-green-400/60 block mb-1">Amount</span>
+                  <span className="text-white font-medium">{selectedTransaction.amount} {selectedTransaction.token}</span>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+                <span className="text-green-400/60 block mb-2">From Address</span>
+                <span className="text-green-400 font-mono text-xs break-all bg-black/50 p-2 rounded border border-green-500/30">
+                  {selectedTransaction.from}
+                </span>
+              </div>
+              
+              <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+                <span className="text-green-400/60 block mb-2">To Address</span>
+                <span className="text-green-400 font-mono text-xs break-all bg-black/50 p-2 rounded border border-green-500/30">
+                  {selectedTransaction.to}
+                </span>
+              </div>
+              
+              <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+                <span className="text-green-400/60 block mb-2">Transaction Hash</span>
+                <span className="text-green-400 font-mono text-xs break-all bg-black/50 p-2 rounded border border-green-500/30">
+                  {selectedTransaction.hash}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+                  <span className="text-green-400/60 block mb-1">Block</span>
+                  <span className="text-white font-medium">{selectedTransaction.blockNumber}</span>
+                </div>
+                <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+                  <span className="text-green-400/60 block mb-1">Gas Used</span>
+                  <span className="text-white font-medium">{selectedTransaction.gasUsed}</span>
+                </div>
+                <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+                  <span className="text-green-400/60 block mb-1">Status</span>
+                  <span className={`font-medium flex items-center space-x-1 ${
+                    selectedTransaction.status === 'success' ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    <span>{selectedTransaction.status === 'success' ? '✅' : '❌'}</span>
+                    <span>{selectedTransaction.status}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end">
+              <Button
+                onClick={() => setSelectedTransaction(null)}
+                className="bg-green-500/10 border border-green-500/40 text-green-400 hover:bg-green-500/20 hover:border-green-500/60"
+                variant="outline"
+                size="sm"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 };
 

@@ -6,7 +6,7 @@ console.log('🧪 Testing MCP Server Connection...');
 // Test 1: Check if MCP server is running
 async function testServerHealth() {
   try {
-    const response = await fetch('http://localhost:3001/health');
+    const response = await fetch('http://localhost:3004/health');
     if (response.ok) {
       console.log('✅ MCP Server health check passed');
       return true;
@@ -24,7 +24,7 @@ async function testServerHealth() {
 function testSSEConnection() {
   return new Promise((resolve) => {
     const sessionId = 'test_' + Date.now();
-    const eventSource = new EventSource(`http://localhost:3001/sse?sessionId=${sessionId}`);
+    const eventSource = new EventSource(`http://localhost:3004/sse?sessionId=${sessionId}`);
     
     let connected = false;
     

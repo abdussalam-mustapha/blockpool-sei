@@ -16,24 +16,46 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
+    // Initialize MCP connection
+    const initializeMcp = async () => {
+      try {
+        console.log('🔌 Dashboard: Initializing MCP connection...');
+        await seiMcpClient.connect();
+        console.log('✅ Dashboard: MCP connection established');
+      } catch (error) {
+        console.error('❌ Dashboard: Failed to connect to MCP server:', error);
+      }
+    };
+
     // Monitor MCP connection status
     const updateStatus = () => {
       const status = seiMcpClient.getConnectionStatus();
+      console.log('📊 Dashboard: MCP status update:', status);
       setMcpStatus({
         ...status,
-        lastSync: status.connected ? 'just now' : undefined
+        lastSync: status.connected ? new Date().toLocaleTimeString() : undefined
       });
     };
 
+    // Initial connection attempt
+    initializeMcp();
+    
     // Initial status check
     updateStatus();
 
-    // Listen for connection changes
-    const handleConnectionChange = (status: any) => {
+    // Listen for connection changes - use correct event names
+    const handleConnected = (data: any) => {
+      console.log('🟢 Dashboard: MCP connected event:', data);
       updateStatus();
     };
 
-    seiMcpClient.on('connection', handleConnectionChange);
+    const handleDisconnected = () => {
+      console.log('🔴 Dashboard: MCP disconnected event');
+      updateStatus();
+    };
+
+    seiMcpClient.on('connected', handleConnected);
+    seiMcpClient.on('disconnected', handleDisconnected);
 
     // Update "last sync" time periodically when connected
     const syncInterval = setInterval(() => {
@@ -46,7 +68,8 @@ const Dashboard = () => {
     }, 30000); // Update every 30 seconds
 
     return () => {
-      seiMcpClient.off('connection', handleConnectionChange);
+      seiMcpClient.off('connected', handleConnected);
+      seiMcpClient.off('disconnected', handleDisconnected);
       clearInterval(syncInterval);
     };
   }, [mcpStatus.connected]);
