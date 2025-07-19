@@ -5,7 +5,7 @@ export interface MCPClientConfig {
     timeout: number;
   };
   network: {
-    network: 'mainnet' | 'testnet';
+    network: 'sei' | 'sei-testnet' | 'sei-devnet';
     rpcUrl?: string;
   };
   cache: {
@@ -24,14 +24,14 @@ export const DEFAULT_CONFIG: MCPClientConfig = {
     timeout: 15000,
   },
   network: {
-    network: 'mainnet',
+    network: 'sei',
   },
   cache: {
     ttl: 30000, // 30 seconds
     maxSize: 1000,
   },
   rateLimit: {
-    maxRequestsPerMinute: 120,
+    maxRequestsPerMinute: 30,
   },
   debug: false,
 };

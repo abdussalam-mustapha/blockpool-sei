@@ -275,7 +275,7 @@ class LegacySeiMcpClient {
       console.log(`🔍 Fetching ${limit} real blockchain events from SEI network...`);
       
       // Get the latest block to find recent transactions
-      const latestBlockResult = await this.client.getLatestBlock();
+      const latestBlockResult = await this.client.getLatestBlock('sei');
       
       if (!latestBlockResult || !latestBlockResult.transactions || latestBlockResult.transactions.length === 0) {
         console.warn('⚠️ No recent transactions found in latest block');
@@ -305,7 +305,18 @@ class LegacySeiMcpClient {
       console.log(`✅ Retrieved ${events.length} real blockchain events from SEI network`);
       return events;
       
-    } catch (error) {
+    } catch (error: any) {
+      // Handle specific error types
+      if (error?.message?.includes('Rate limit exceeded')) {
+        console.warn('⚠️ Rate limit exceeded - waiting before retry...');
+        return [];
+      }
+      
+      if (error?.message?.includes('Unsupported network')) {
+        console.error('❌ Network configuration error:', error.message);
+        return [];
+      }
+      
       console.error('❌ Failed to fetch real blockchain data from MCP server:', error);
       
       // Return empty array instead of mock data when MCP server fails
