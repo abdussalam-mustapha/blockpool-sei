@@ -309,7 +309,19 @@ const LiveFeed = () => {
               </div>
             </div>
             
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-between">
+              <Button
+                onClick={() => {
+                  const explorerUrl = `https://seitrace.com/tx/${selectedTransaction.hash}`;
+                  window.open(explorerUrl, '_blank', 'noopener,noreferrer');
+                }}
+                className="bg-green-500/10 border border-green-500/40 text-green-400 hover:bg-green-500/20 hover:border-green-500/60 flex items-center space-x-2"
+                variant="outline"
+                size="sm"
+              >
+                <span>🔍</span>
+                <span>View on Explorer</span>
+              </Button>
               <Button
                 onClick={() => setSelectedTransaction(null)}
                 className="bg-green-500/10 border border-green-500/40 text-green-400 hover:bg-green-500/20 hover:border-green-500/60"
