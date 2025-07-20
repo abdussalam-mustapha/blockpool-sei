@@ -178,7 +178,7 @@ const Dashboard = () => {
       </Card>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[600px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[600px]">
         <AIAssistant />
         <LiveFeed />
       </div>
