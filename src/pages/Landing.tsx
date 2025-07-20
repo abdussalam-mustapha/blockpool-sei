@@ -68,66 +68,66 @@ const Landing = () => {
     <div className="min-h-screen bg-black text-foreground">
       {/* Header */}
       <header className="glass-card border-b border-green-500/30 sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 md:space-x-3">
               <img 
                 src="/blockpool-logo.svg" 
                 alt="Blockpool Logo" 
-                className="w-10 h-10"
+                className="w-8 h-8 md:w-10 md:h-10"
               />
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent">
+                <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent">
                   Blockpool
                 </h1>
-                <p className="text-sm text-green-400/70">Advanced Blockchain Analytics</p>
+                <p className="text-xs md:text-sm text-green-400/70 hidden sm:block">Advanced Blockchain Analytics</p>
               </div>
             </div>
             <Button 
               onClick={() => navigate('/dashboard')}
-              className="bg-green-500 hover:bg-green-600 text-black px-6 glow-green transition-all duration-300"
+              className="bg-green-500 hover:bg-green-600 text-black px-3 md:px-6 py-2 glow-green transition-all duration-300 text-sm md:text-base"
             >
-              Launch Dashboard
-              <ChevronRight className="ml-2 h-4 w-4" />
+              <span className="hidden sm:inline">Launch Dashboard</span>
+              <span className="sm:hidden">Dashboard</span>
+              <ChevronRight className="ml-1 md:ml-2 h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 py-20">
+      <section className="container mx-auto px-4 md:px-6 py-12 md:py-20">
         <div className="text-center max-w-4xl mx-auto">
-          <Badge className="mb-6 px-4 py-2 bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30">
-            <Rocket className="mr-2 h-4 w-4" />
+          <Badge className="mb-4 md:mb-6 px-3 md:px-4 py-2 bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30 text-sm">
+            <Rocket className="mr-2 h-3 w-3 md:h-4 md:w-4" />
             Powered by Sei-mcp-kit
           </Badge>
           
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-green-400 to-green-500 bg-clip-text text-transparent leading-tight">
-            Next-Gen Blockchain
-            <br />
-            <span className="text-green-400">Analytics Platform</span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-white via-green-400 to-green-500 bg-clip-text text-transparent leading-tight">
+            <span className="block">Next-Gen Blockchain</span>
+            <span className="block text-green-400">Analytics Platform</span>
           </h1>
           
-          <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base md:text-xl text-gray-300 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed px-4">
             Unlock the power of SEI blockchain with real-time monitoring, AI-driven insights, 
             and comprehensive analytics. Make informed decisions with live data at your fingertips.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4">
             <Button 
               size="lg" 
               onClick={() => navigate('/dashboard')}
-              className="bg-green-500 hover:bg-green-600 text-black px-8 py-6 text-lg glow-green transition-all duration-300"
+              className="bg-green-500 hover:bg-green-600 text-black px-6 md:px-8 py-4 md:py-6 text-base md:text-lg glow-green transition-all duration-300 w-full sm:w-auto"
             >
-              <Activity className="mr-2 h-5 w-5" />
+              <Activity className="mr-2 h-4 w-4 md:h-5 md:w-5" />
               Start Analyzing
             </Button>
             <Button 
               size="lg" 
               variant="outline" 
-              className="px-8 py-6 text-lg border-green-500/50 text-green-400 hover:bg-green-500/10 hover:border-green-500"
+              className="px-6 md:px-8 py-4 md:py-6 text-base md:text-lg border-green-500/50 text-green-400 hover:bg-green-500/10 hover:border-green-500 w-full sm:w-auto"
             >
-              <LineChart className="mr-2 h-5 w-5" />
+              <LineChart className="mr-2 h-4 w-4 md:h-5 md:w-5" />
               View Demo
             </Button>
           </div>
@@ -135,16 +135,16 @@ const Landing = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="container mx-auto px-6 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <section className="container mx-auto px-4 md:px-6 py-12 md:py-16">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {stats.map((stat, index) => (
             <Card key={index} className="text-center glass-card hover:glow-green transition-all duration-300">
-              <CardContent className="pt-6">
-                <div className="flex justify-center mb-3 text-green-400">
+              <CardContent className="pt-4 md:pt-6 pb-4 md:pb-6">
+                <div className="flex justify-center mb-2 md:mb-3 text-green-400">
                   {stat.icon}
                 </div>
-                <div className="text-3xl font-bold mb-1 text-white">{stat.value}</div>
-                <div className="text-sm text-gray-400">{stat.label}</div>
+                <div className="text-xl md:text-3xl font-bold mb-1 text-white">{stat.value}</div>
+                <div className="text-xs md:text-sm text-gray-400 px-1">{stat.label}</div>
               </CardContent>
             </Card>
           ))}
@@ -152,31 +152,31 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section className="container mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <Badge className="mb-4 bg-green-500/20 text-green-400 border-green-500/30">
-            <Sparkles className="mr-2 h-4 w-4" />
+      <section className="container mx-auto px-4 md:px-6 py-16 md:py-20">
+        <div className="text-center mb-12 md:mb-16">
+          <Badge className="mb-4 bg-green-500/20 text-green-400 border-green-500/30 text-sm">
+            <Sparkles className="mr-2 h-3 w-3 md:h-4 md:w-4" />
             Powerful Features
           </Badge>
-          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-white to-green-400 bg-clip-text text-transparent">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-white to-green-400 bg-clip-text text-transparent px-4">
             Everything you need for blockchain analytics
           </h2>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+          <p className="text-base md:text-xl text-gray-300 max-w-2xl mx-auto px-4">
             Comprehensive tools and insights to monitor, analyze, and understand blockchain activity like never before.
           </p>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {features.map((feature, index) => (
             <Card key={index} className="glass-card hover:glow-green transition-all duration-300 group">
-              <CardHeader>
-                <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-4 text-green-400 group-hover:bg-green-500/30 transition-colors">
+              <CardHeader className="pb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-3 md:mb-4 text-green-400 group-hover:bg-green-500/30 transition-colors">
                   {feature.icon}
                 </div>
-                <CardTitle className="text-xl text-white">{feature.title}</CardTitle>
+                <CardTitle className="text-lg md:text-xl text-white">{feature.title}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <CardDescription className="text-base leading-relaxed text-gray-300">
+              <CardContent className="pt-0">
+                <CardDescription className="text-sm md:text-base leading-relaxed text-gray-300">
                   {feature.description}
                 </CardDescription>
               </CardContent>

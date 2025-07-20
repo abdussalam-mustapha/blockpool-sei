@@ -147,7 +147,7 @@ const AnalyticsWidgets = () => {
           },
           {
             title: 'Top Token Volume',
-            value: marketData?.topToken || 'SEI',
+            value: 'SEI',
             change: `$${(swapVolume * 0.67).toFixed(0)}K`,
             trend: swapVolumeChange.trend
           },
@@ -260,10 +260,10 @@ const AnalyticsWidgets = () => {
   }, [previousData]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {lastUpdate && (
-        <div className="flex justify-between items-center">
-          <p className="text-sm text-gray-400">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
+          <p className="text-xs sm:text-sm text-gray-400">
             Last updated: {lastUpdate}
           </p>
           <div className="flex items-center space-x-2">
@@ -273,32 +273,34 @@ const AnalyticsWidgets = () => {
         </div>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {widgets.map((widget, index) => (
           <Card
             key={index}
-            className="glass-card p-6 hover:border-primary/30 transition-all duration-300 hover:glow-green cursor-pointer"
+            className="glass-card p-3 sm:p-4 lg:p-6 hover:border-primary/30 transition-all duration-300 hover:glow-green cursor-pointer"
           >
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-gray-400">{widget.title}</h4>
-              <div className={`text-xs px-2 py-1 rounded-full ${
+            <div className="flex items-start justify-between mb-2 sm:mb-3">
+              <h4 className="text-xs sm:text-sm font-medium text-gray-400 leading-tight pr-2">
+                {widget.title}
+              </h4>
+              <div className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
                 widget.trend === 'up' 
                   ? 'bg-green-500/20 text-green-400' 
                   : 'bg-red-500/20 text-red-400'
               }`}>
                 {widget.loading ? (
-                  <div className="w-8 h-3 bg-gray-600 rounded animate-pulse"></div>
+                  <div className="w-6 sm:w-8 h-3 bg-gray-600 rounded animate-pulse"></div>
                 ) : (
                   widget.change
                 )}
               </div>
             </div>
             
-            <div className="text-2xl font-bold text-white mb-1">
+            <div className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-2">
               {widget.loading ? (
-                <div className="w-16 h-8 bg-gray-600 rounded animate-pulse"></div>
+                <div className="w-12 sm:w-16 h-6 sm:h-8 bg-gray-600 rounded animate-pulse"></div>
               ) : (
-                widget.value
+                <span className="break-all">{widget.value}</span>
               )}
             </div>
             

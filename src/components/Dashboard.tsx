@@ -93,13 +93,13 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Welcome Section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
           Welcome to Blockpool
         </h1>
-        <p className="text-gray-400">
+        <p className="text-sm md:text-base text-gray-400">
           Your AI-powered companion for SEI blockchain analytics and insights
         </p>
       </div>

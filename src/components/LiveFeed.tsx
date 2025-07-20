@@ -117,11 +117,15 @@ const LiveFeed = () => {
   };
 
   return (
-    <Card className="p-4 bg-black border border-green-500/40">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Live Blockchain Feed</h3>
+    <Card className="p-3 md:p-4 bg-black border border-green-500/40">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
+        <h3 className="text-base md:text-lg font-semibold text-white truncate">
+          <span className="hidden sm:inline">Live Blockchain Feed</span>
+          <span className="sm:hidden">Live Feed</span>
+        </h3>
         <div className="flex items-center space-x-2">
-          <div className={`w-2 h-2 rounded-full ${
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
             connectionStatus === 'connected' ? 'bg-green-400 animate-pulse' : 
             connectionStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' : 'bg-red-400'
           }`}></div>
@@ -129,28 +133,32 @@ const LiveFeed = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-4">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
         <div className="flex space-x-2">
           <Button
             onClick={handlePauseToggle}
             variant="outline"
             size="sm"
-            className="text-xs border-green-500/40 hover:border-green-500/60 bg-black text-green-400 hover:bg-green-500/10"
+            className="text-xs border-green-500/40 hover:border-green-500/60 bg-black text-green-400 hover:bg-green-500/10 px-2 md:px-3"
           >
-            {isPaused ? '▶️ Resume' : '⏸️ Pause'}
+            <span className="hidden sm:inline">{isPaused ? '▶️ Resume' : '⏸️ Pause'}</span>
+            <span className="sm:hidden">{isPaused ? '▶️' : '⏸️'}</span>
           </Button>
           <Button
             onClick={handleRefresh}
             variant="outline"
             size="sm"
-            className="text-xs border-green-500/40 hover:border-green-500/60 bg-black text-green-400 hover:bg-green-500/10"
+            className="text-xs border-green-500/40 hover:border-green-500/60 bg-black text-green-400 hover:bg-green-500/10 px-2 md:px-3"
             disabled={isLoading}
           >
-            {isLoading ? '⏳ Loading...' : '🔄 Refresh'}
+            <span className="hidden sm:inline">{isLoading ? '⏳ Loading...' : '🔄 Refresh'}</span>
+            <span className="sm:hidden">{isLoading ? '⏳' : '🔄'}</span>
           </Button>
         </div>
-        <span className="text-xs text-green-400">
-          Showing {feedItems.length} recent transactions
+        <span className="text-xs text-green-400 text-center sm:text-right">
+          <span className="hidden sm:inline">Showing {feedItems.length} recent transactions</span>
+          <span className="sm:hidden">{feedItems.length} items</span>
         </span>
       </div>
 
@@ -188,35 +196,43 @@ const LiveFeed = () => {
             {feedItems.map((item, index) => (
               <div 
                 key={`${item.id}-${index}`}
-                className="p-4 bg-black border border-green-500/20 rounded-lg hover:border-green-500/40 transition-all duration-200 hover:shadow-lg hover:shadow-green-500/10"
+                className="p-3 md:p-4 bg-black border border-green-500/20 rounded-lg hover:border-green-500/40 transition-all duration-200 hover:shadow-lg hover:shadow-green-500/10 cursor-pointer"
                 style={{ transform: 'translateZ(0)', willChange: 'transform' }}
+                onClick={() => setSelectedTransaction(item)}
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getTypeColor(item.type)}`}>
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 space-y-2 sm:space-y-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border self-start ${getTypeColor(item.type)}`}>
                       {item.type.toUpperCase()}
                     </span>
                     <span className="text-xs text-green-400/60">
                       {formatTimestamp(item.timestamp)}
                     </span>
                   </div>
-                  <span className={`text-sm font-medium ${
+                  <span className={`text-sm font-medium self-start sm:self-auto ${
                     item.status === 'success' ? 'text-green-400' : 'text-red-400'
                   }`}>
                     {item.status === 'success' ? '✅' : '❌'}
                   </span>
                 </div>
                 
-                <p className="text-sm text-white mb-3 truncate" title={item.description}>
+                {/* Description */}
+                <p className="text-sm text-white mb-3 line-clamp-2 sm:truncate" title={item.description}>
                   {item.description}
                 </p>
                 
-                <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
-                  <div className="text-green-400/60">
-                    From: <span className="text-green-400 font-mono">{truncateAddress(item.from)}</span>
+                {/* Addresses */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 text-xs">
+                  <div className="text-green-400/60 truncate">
+                    <span className="hidden sm:inline">From: </span>
+                    <span className="sm:hidden">From: </span>
+                    <span className="text-green-400 font-mono">{truncateAddress(item.from, 4, 4)}</span>
                   </div>
-                  <div className="text-green-400/60">
-                    To: <span className="text-green-400 font-mono">{truncateAddress(item.to)}</span>
+                  <div className="text-green-400/60 truncate">
+                    <span className="hidden sm:inline">To: </span>
+                    <span className="sm:hidden">To: </span>
+                    <span className="text-green-400 font-mono">{truncateAddress(item.to, 4, 4)}</span>
                   </div>
                 </div>
                 
