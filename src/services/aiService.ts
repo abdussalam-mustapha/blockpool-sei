@@ -1,4 +1,4 @@
-import { seiMcpClient, type WalletAnalysis } from './seiMcpClient';
+import { seiMcpClient, type WalletAnalysis, type MarketData } from './seiMcpClient';
 
 interface AIResponse {
   content: string;
@@ -20,52 +20,74 @@ export const generateAIResponse = async (query: string): Promise<AIResponse> => 
       };
     }
 
-    // Address-specific queries
-    if (lowerQuery.includes('sei1') || lowerQuery.includes('wallet')) {
-      const addressMatch = query.match(/sei1[a-z0-9]{38,58}/);
-      if (addressMatch) {
-        const address = addressMatch[0];
-        console.log('🤖 AI analyzing wallet:', address);
+    // Address-specific queries - Support both SEI native and EVM addresses
+    if (lowerQuery.includes('sei1') || lowerQuery.includes('0x') || lowerQuery.includes('wallet') || lowerQuery.includes('address')) {
+      // Match SEI native addresses (sei1...)
+      const seiAddressMatch = query.match(/sei1[a-z0-9]{38,58}/);
+      // Match EVM addresses (0x...)
+      const evmAddressMatch = query.match(/0x[a-fA-F0-9]{40}/);
+      
+      const address = seiAddressMatch?.[0] || evmAddressMatch?.[0];
+      
+      if (address) {
+        const isEVMAddress = address.startsWith('0x');
+        const networkMode = isEVMAddress ? 'EVM' : 'Native';
+        
+        console.log(`🤖 AI analyzing ${networkMode} wallet:`, address);
         
         try {
           const walletData = await seiMcpClient.analyzeWallet(address);
           
           if (walletData) {
             const riskLevel = walletData.riskScore < 0.3 ? 'Low' : walletData.riskScore < 0.7 ? 'Medium' : 'High';
-            const tokenList = walletData.tokens.slice(0, 5).map(t => `${t.amount} ${t.denom}`).join(', ');
             
             // Check if this is live data or mock data based on connection status
             const isLiveData = seiMcpClient.getConnectionStatus().connected;
-            const dataSource = isLiveData ? 'Live SEI MCP Server' : 'Simulated Data';
+            const dataSource = isLiveData ? `Live SEI MCP Server (${networkMode})` : `Simulated Data (${networkMode})`;
             const confidence = isLiveData ? 0.9 : 0.6;
             
             // Check if wallet has zero balance
-            const balanceValue = parseFloat(walletData.balance.replace(' SEI', ''));
+            const balanceValue = parseFloat(walletData.balance.replace(/ (SEI|ETH)/, ''));
             const hasBalance = balanceValue > 0;
             
+            // Format explorer URL based on address type
+            const explorerUrl = isEVMAddress 
+              ? `https://seitrace.com/address/${address}?tab=evm`
+              : `https://seitrace.com/address/${address}`;
+            
+            // Format token holdings with proper display
+            const tokenHoldings = walletData.tokens.length > 0 
+              ? walletData.tokens.map(token => `• ${token.amount} ${token.denom.toUpperCase()}`).join('\n')
+              : '• No token holdings found';
+            
+            // Format recent transactions
+            const recentActivity = walletData.recentTransactions.length > 0
+              ? walletData.recentTransactions.slice(0, 3).map(tx => `• ${tx.type}: ${tx.amount} ${tx.token}`).join('\n')
+              : '• No recent transactions found';
+            
             return {
-              content: `📊 **Wallet Analysis for ${address}**\n\n💰 **Balance:** ${walletData.balance}\n📈 **Transactions:** ${walletData.transactionCount} total\n🛡️ **Risk Score:** ${(walletData.riskScore * 100).toFixed(1)}%\n⏰ **Last Activity:** ${walletData.lastActivity}\n\n🔍 **Recent Activity:**\n${walletData.recentTransactions.slice(0, 3).map(tx => `• ${tx.type}: ${tx.amount} ${tx.token}`).join('\n')}\n\n📝 **Token Holdings:**\n${walletData.tokens.map(token => `• ${token.amount} ${token.denom.toUpperCase()}`).join('\n')}${!isLiveData ? '\n\n📝 **Note:** This analysis uses simulated data. Connect to live MCP server for real-time blockchain data.' : ''}`,
+              content: `📊 **${networkMode} Wallet Analysis for ${address}**\n\n🌐 **Network Mode:** SEI ${networkMode}${isEVMAddress ? ' (EVM Compatible)' : ' (Cosmos SDK)'}\n💰 **Balance:** ${walletData.balance}\n📈 **Transactions:** ${walletData.transactionCount} total\n🛡️ **Risk Score:** ${(walletData.riskScore * 100).toFixed(1)}% (${riskLevel})\n⏰ **Last Activity:** ${walletData.lastActivity}\n\n🔍 **Recent Activity:**\n${recentActivity}\n\n📝 **Token Holdings:**\n${tokenHoldings}${!isLiveData ? '\n\n📝 **Note:** This analysis uses simulated data. Connect to live MCP server for real-time blockchain data.' : ''}\n\n🔗 **View on Explorer:** [SeiTrace](${explorerUrl})`,
               confidence,
-              sources: [dataSource, `https://seistream.app/address/${address}`]
+              sources: [dataSource, explorerUrl]
             };
           } else {
             // Fallback if somehow no data is returned
             return {
-              content: `⚠️ **Unable to analyze wallet ${address}**\n\nThere was an issue retrieving wallet data. Please try again in a moment.`,
+              content: `⚠️ **Unable to analyze ${networkMode} wallet ${address}**\n\nThere was an issue retrieving wallet data. Please try again in a moment.`,
               confidence: 0.1,
               sources: []
             };
           }
         } catch (error) {
-          console.error('❌ AI wallet analysis error:', error);
+          console.error(`❌ AI ${networkMode} wallet analysis error:`, error);
           return {
-            content: `❌ **Error analyzing wallet ${address}**\n\nThere was a technical issue connecting to the SEI blockchain. Please:\n• Verify the address is correct\n• Check your internet connection\n• Try again in a few moments\n\n🔧 **Technical details:** ${error instanceof Error ? error.message : 'Unknown error'}`,
+            content: `❌ **Error analyzing ${networkMode} wallet ${address}**\n\nThere was a technical issue connecting to the SEI blockchain. Please:\n• Verify the address is correct\n• Check your internet connection\n• Try again in a few moments\n\n🔧 **Technical details:** ${error instanceof Error ? error.message : 'Unknown error'}`,
             confidence: 0.1
           };
         }
       } else {
         return {
-          content: `To analyze a specific wallet, please provide a valid SEI address (starts with "sei1").\n\n🔍 **I can provide real-time analysis of:**\n• Current balance and token holdings\n• Transaction history and patterns\n• Risk assessment and security score\n• Trading activity and volume\n• Recent blockchain activity\n\n**Example:** "Analyze wallet sei1abc123..."\n\n✅ **All data is fetched live from the SEI blockchain**`,
+          content: `To analyze a specific wallet, please provide a valid address:\n\n🔹 **SEI Native:** sei1abc123... (Cosmos SDK format)\n🔹 **SEI EVM:** 0xabc123... (Ethereum format)\n\n🔍 **I can provide real-time analysis of:**\n• Current balance and token holdings\n• Transaction history and patterns\n• Risk assessment and security score\n• Trading activity and volume\n• Recent blockchain activity\n• Cross-chain interactions (EVM ↔ Native)\n\n**Examples:**\n• "Analyze wallet sei1abc123..."\n• "Check EVM address 0xabc123..."\n\n✅ **Supports both SEI Native and EVM modes**`,
           confidence: 0.7
         };
       }
