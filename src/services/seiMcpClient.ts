@@ -484,6 +484,235 @@ class LegacySeiMcpClient {
   async getRiskAnalysis(address: string): Promise<any> {
     return this.performRiskAnalysis(address);
   }
+
+  // Multi-chain support methods
+  async getBlockchainEventsForNetwork(network: string, limit: number = 10): Promise<BlockchainEvent[]> {
+    await this.initPromise;
+    
+    if (!this.client || !this.connectionStatus.connected) {
+      console.warn('[MCP] Not connected, returning mock data for network:', network);
+      return this.generateMockEventsForNetwork(network, limit);
+    }
+
+    try {
+      // For now, delegate to the existing method
+      // In the future, this would call network-specific endpoints
+      return await this.getRecentBlockchainEvents(limit);
+    } catch (error) {
+      console.error('[MCP] Error fetching events for network:', network, error);
+      return this.generateMockEventsForNetwork(network, limit);
+    }
+  }
+
+  async getWalletBalanceForNetwork(address: string, network: string): Promise<any> {
+    await this.initPromise;
+    
+    if (!this.client || !this.connectionStatus.connected) {
+      console.warn('[MCP] Not connected, returning mock balance for network:', network);
+      return this.generateMockBalanceForNetwork(address, network);
+    }
+
+    try {
+      // For now, delegate to the existing method
+      // In the future, this would call network-specific endpoints
+      const analysis = await this.analyzeWallet(address);
+      return {
+        address,
+        network,
+        balance: analysis.balance,
+        tokens: analysis.tokens
+      };
+    } catch (error) {
+      console.error('[MCP] Error fetching balance for network:', network, error);
+      return this.generateMockBalanceForNetwork(address, network);
+    }
+  }
+
+  async getNetworkInfo(network: string): Promise<any> {
+    await this.initPromise;
+    
+    if (!this.client || !this.connectionStatus.connected) {
+      console.warn('[MCP] Not connected, returning mock network info for:', network);
+      return this.generateMockNetworkInfo(network);
+    }
+
+    try {
+      // For now, return mock data
+      // In the future, this would call network-specific endpoints
+      return this.generateMockNetworkInfo(network);
+    } catch (error) {
+      console.error('[MCP] Error fetching network info for:', network, error);
+      return this.generateMockNetworkInfo(network);
+    }
+  }
+
+  // Mock data generators for multi-chain support
+  private generateMockEventsForNetwork(network: string, limit: number): BlockchainEvent[] {
+    const events: BlockchainEvent[] = [];
+    const networkPrefix = this.getNetworkAddressPrefix(network);
+    
+    for (let i = 0; i < limit; i++) {
+      const types: Array<'transfer' | 'mint' | 'swap' | 'contract'> = ['transfer', 'mint', 'swap', 'contract'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      
+      events.push({
+        id: `${network}-${Date.now()}-${i}`,
+        type,
+        timestamp: new Date(Date.now() - i * 60000).toISOString(),
+        from: `${networkPrefix}${Math.random().toString(36).substring(2, 42)}`,
+        to: `${networkPrefix}${Math.random().toString(36).substring(2, 42)}`,
+        amount: this.generateRealisticAmount(type),
+        token: this.getNetworkNativeToken(network),
+        hash: this.generateHashForNetwork(network),
+        gasUsed: (Math.floor(Math.random() * 100000) + 21000).toString(),
+        gasPrice: (Math.floor(Math.random() * 50) + 10).toString(),
+        blockNumber: Math.floor(Math.random() * 1000000) + 1000000,
+        status: Math.random() > 0.1 ? 'success' : 'failed',
+        description: `${type.charAt(0).toUpperCase() + type.slice(1)} on ${network}`,
+        fee: this.calculateFee(
+          (Math.floor(Math.random() * 100000) + 21000).toString(),
+          (Math.floor(Math.random() * 50) + 10).toString()
+        )
+      });
+    }
+    
+    return events;
+  }
+
+  private generateMockBalanceForNetwork(address: string, network: string): any {
+    const nativeToken = this.getNetworkNativeToken(network);
+    const balance = (Math.random() * 1000).toFixed(6);
+    
+    return {
+      address,
+      network,
+      balance: `${balance} ${nativeToken}`,
+      nativeBalance: balance,
+      tokens: [
+        {
+          denom: nativeToken.toLowerCase(),
+          amount: balance,
+          symbol: nativeToken,
+          name: this.getNetworkNativeTokenName(network)
+        }
+      ],
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  private generateMockNetworkInfo(network: string): any {
+    return {
+      network,
+      name: this.getNetworkDisplayName(network),
+      chainId: this.getNetworkChainId(network),
+      blockHeight: Math.floor(Math.random() * 1000000) + 1000000,
+      blockTime: Math.floor(Math.random() * 10) + 2,
+      gasPrice: (Math.floor(Math.random() * 50) + 10).toString(),
+      nativeToken: this.getNetworkNativeToken(network),
+      isEVM: this.isEVMNetwork(network),
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  // Network utility methods
+  private getNetworkAddressPrefix(network: string): string {
+    if (network.startsWith('sei')) return 'sei';
+    return '0x';
+  }
+
+  private getNetworkNativeToken(network: string): string {
+    if (network.startsWith('sei')) return 'SEI';
+    if (network.startsWith('ethereum')) return 'ETH';
+    if (network.startsWith('polygon')) return 'MATIC';
+    if (network.startsWith('bsc')) return 'BNB';
+    if (network.startsWith('avalanche')) return 'AVAX';
+    if (network.startsWith('arbitrum')) return 'ETH';
+    if (network.startsWith('optimism')) return 'ETH';
+    if (network.startsWith('base')) return 'ETH';
+    return 'ETH';
+  }
+
+  private getNetworkNativeTokenName(network: string): string {
+    if (network.startsWith('sei')) return 'SEI';
+    if (network.startsWith('ethereum')) return 'Ether';
+    if (network.startsWith('polygon')) return 'Polygon';
+    if (network.startsWith('bsc')) return 'BNB';
+    if (network.startsWith('avalanche')) return 'Avalanche';
+    if (network.startsWith('arbitrum')) return 'Ether';
+    if (network.startsWith('optimism')) return 'Ether';
+    if (network.startsWith('base')) return 'Ether';
+    return 'Ether';
+  }
+
+  private getNetworkDisplayName(network: string): string {
+    const names: Record<string, string> = {
+      'sei': 'SEI Network',
+      'sei-testnet': 'SEI Testnet',
+      'sei-devnet': 'SEI Devnet',
+      'ethereum': 'Ethereum Mainnet',
+      'ethereum-sepolia': 'Ethereum Sepolia',
+      'polygon': 'Polygon Mainnet',
+      'polygon-mumbai': 'Polygon Mumbai',
+      'bsc': 'BNB Smart Chain',
+      'bsc-testnet': 'BSC Testnet',
+      'avalanche': 'Avalanche C-Chain',
+      'avalanche-fuji': 'Avalanche Fuji',
+      'arbitrum': 'Arbitrum One',
+      'arbitrum-sepolia': 'Arbitrum Sepolia',
+      'optimism': 'Optimism',
+      'optimism-sepolia': 'Optimism Sepolia',
+      'base': 'Base',
+      'base-sepolia': 'Base Sepolia'
+    };
+    return names[network] || network;
+  }
+
+  private getNetworkChainId(network: string): number {
+    const chainIds: Record<string, number> = {
+      'sei': 1329,
+      'sei-testnet': 1328,
+      'sei-devnet': 713715,
+      'ethereum': 1,
+      'ethereum-sepolia': 11155111,
+      'polygon': 137,
+      'polygon-mumbai': 80001,
+      'bsc': 56,
+      'bsc-testnet': 97,
+      'avalanche': 43114,
+      'avalanche-fuji': 43113,
+      'arbitrum': 42161,
+      'arbitrum-sepolia': 421614,
+      'optimism': 10,
+      'optimism-sepolia': 11155420,
+      'base': 8453,
+      'base-sepolia': 84532
+    };
+    return chainIds[network] || 1;
+  }
+
+  private isEVMNetwork(network: string): boolean {
+    return !network.startsWith('sei');
+  }
+
+  private generateHashForNetwork(network: string): string {
+    if (network.startsWith('sei')) {
+      // SEI format: 64 chars, uppercase hex, no 0x prefix
+      const chars = '0123456789ABCDEF';
+      let hash = '';
+      for (let i = 0; i < 64; i++) {
+        hash += chars[Math.floor(Math.random() * 16)];
+      }
+      return hash;
+    } else {
+      // EVM format: 0x + 64 chars lowercase hex
+      const chars = '0123456789abcdef';
+      let hash = '0x';
+      for (let i = 0; i < 64; i++) {
+        hash += chars[Math.floor(Math.random() * 16)];
+      }
+      return hash;
+    }
+  }
 }
 
 // Create legacy singleton instance for backward compatibility

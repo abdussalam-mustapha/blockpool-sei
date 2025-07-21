@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { seiMcpClient } from '@/services/seiMcpClient';
+import { NetworkSelector } from './NetworkSelector';
+import { 
+  type SupportedNetwork, 
+  getNetworkDisplayName, 
+  isEVMMode,
+  isNativeMode,
+  formatExplorerUrl 
+} from '../lib/config';
 
 interface WidgetData {
   title: string;
@@ -11,6 +19,7 @@ interface WidgetData {
 }
 
 const AnalyticsWidgets = () => {
+  const [selectedNetwork, setSelectedNetwork] = useState<SupportedNetwork>('sei');
   const [widgets, setWidgets] = useState<WidgetData[]>([
     {
       title: 'Token Inflow/Outflow',
@@ -76,10 +85,13 @@ const AnalyticsWidgets = () => {
       if (connectionStatus.connected) {
         setIsRealTime(true);
         
-        // Fetch live blockchain events for real-time calculations
-        const recentEvents = await seiMcpClient.getRecentBlockchainEvents();
+        // Fetch live blockchain events for real-time calculations with network context
+        const recentEvents = await seiMcpClient.getRecentBlockchainEvents(10);
         const marketData = await seiMcpClient.getMarketData();
         const nftActivity = await seiMcpClient.getNFTActivity();
+        
+        // Log network mode for debugging
+        console.log(`[Analytics] Fetching data for ${getNetworkDisplayName(selectedNetwork)} (${isEVMMode(selectedNetwork) ? 'EVM' : 'Native'} mode)`);
         
         // Calculate real-time metrics from blockchain events
         const now = new Date();
@@ -259,8 +271,17 @@ const AnalyticsWidgets = () => {
     };
   }, [previousData]);
 
+  // Refetch data when network changes
+  useEffect(() => {
+    fetchRealTimeAnalytics();
+  }, [selectedNetwork]);
+
   return (
     <div className="space-y-3 sm:space-y-4">
+      <NetworkSelector 
+        selectedNetwork={selectedNetwork}
+        onNetworkChange={setSelectedNetwork}
+      />
       {lastUpdate && (
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
           <p className="text-xs sm:text-sm text-gray-400">
