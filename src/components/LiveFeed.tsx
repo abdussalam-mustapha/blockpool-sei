@@ -325,13 +325,15 @@ const LiveFeed = () => {
               </div>
             </div>
             
-            {/* Warning for mock data */}
-            <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-              <div className="flex items-center space-x-2 text-yellow-400 text-xs">
-                <span>⚠️</span>
-                <span>Note: This is demo data with mock transaction hashes. Real blockchain data requires MCP server connection.</span>
+            {/* Warning for mock data - only show when MCP server is not connected */}
+            {connectionStatus !== 'connected' && (
+              <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <div className="flex items-center space-x-2 text-yellow-400 text-xs">
+                  <span>⚠️</span>
+                  <span>Note: This is demo data with mock transaction hashes. Real blockchain data requires MCP server connection.</span>
+                </div>
               </div>
-            </div>
+            )}
             
             <div className="mt-6 flex justify-between">
               <Button
