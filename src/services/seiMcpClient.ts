@@ -265,16 +265,16 @@ class LegacySeiMcpClient {
 
   async getRecentEvents(limit: number = 10): Promise<BlockchainEvent[]> {
     await this.initPromise;
-  
+
     if (!this.client || !this.connectionStatus.connected) {
       console.warn('⚠️ MCP Client not connected - no real blockchain data available');
       return [];
     }
-  
+
     try {
-      console.log(`🔍 Fetching ${limit} real blockchain events from SEI network...`);
+      console.log(`🔍 Fetching ${limit} real blockchain transactions from SEI network...`);
       
-      // Get the latest block to find recent transactions
+      // Get the latest block with transaction data
       const latestBlockResult = await this.client.getLatestBlock('sei');
       
       console.log('📦 Latest block data:', latestBlockResult);
@@ -284,49 +284,63 @@ class LegacySeiMcpClient {
         return [];
       }
       
-      // Create realistic blockchain events based on block data
-      const blockNumber = latestBlockResult.number || Date.now();
+      const events: BlockchainEvent[] = [];
+      const blockNumber = latestBlockResult.number || 0;
       const blockTimestamp = latestBlockResult.timestamp ? 
         new Date(Number(latestBlockResult.timestamp) * 1000).toISOString() : 
         new Date().toISOString();
       
-      // Generate realistic events based on block information
-      const events: BlockchainEvent[] = [];
+      // Get transaction hashes from the latest block
+      const transactionHashes = latestBlockResult.transactions || [];
+      console.log(`📋 Found ${transactionHashes.length} transactions in latest block`);
       
-      for (let i = 0; i < Math.min(limit, 10); i++) {
-        const txTypes: ('transfer' | 'mint' | 'swap' | 'contract')[] = ['transfer', 'mint', 'swap', 'contract'];
-        const randomType = txTypes[Math.floor(Math.random() * txTypes.length)];
-        
-        // Generate realistic SEI addresses
-        const fromAddress = this.generateSeiAddress();
-        const toAddress = this.generateSeiAddress();
-        
-        // Generate realistic amounts based on transaction type
-        const amount = this.generateRealisticAmount(randomType);
-        
-        const event: BlockchainEvent = {
-          id: `sei_${blockNumber}_${i}`,
-          type: randomType,
-          timestamp: blockTimestamp,
-          from: fromAddress,
-          to: toAddress,
-          amount: amount,
-          token: 'SEI',
-          hash: `0x${Math.random().toString(16).substr(2, 64)}`,
-          gasUsed: (21000 + Math.floor(Math.random() * 50000)).toString(),
-          gasPrice: (Math.random() * 20000000000 + 1000000000).toString(),
-          blockNumber: Number(blockNumber),
-          status: 'success',
-          description: `${randomType} transaction on SEI network`,
-          txHash: `0x${Math.random().toString(16).substr(2, 64)}`,
-          blockHeight: Number(blockNumber),
-          fee: (Math.random() * 0.01 + 0.001).toFixed(6)
-        };
-        
-        events.push(event);
+      if (transactionHashes.length === 0) {
+        console.warn('⚠️ No transactions found in latest block');
+        return [];
       }
       
-      console.log(`✅ Generated ${events.length} realistic blockchain events from SEI block #${blockNumber}`);
+      // Fetch detailed transaction data for each hash (up to limit)
+      const hashesToFetch = transactionHashes.slice(0, Math.min(limit, transactionHashes.length));
+      
+      for (let i = 0; i < hashesToFetch.length; i++) {
+        try {
+          const txHash = hashesToFetch[i];
+          console.log(`🔍 Fetching transaction details for hash: ${txHash}`);
+          
+          // Get detailed transaction data from MCP server
+          const txData = await this.client.getTransaction(txHash, 'sei');
+          
+          if (txData) {
+            // Convert real transaction data to BlockchainEvent format
+            const event: BlockchainEvent = {
+              id: `sei_real_${blockNumber}_${i}`,
+              type: this.determineTransactionType(txData),
+              timestamp: blockTimestamp,
+              from: txData.from || '',
+              to: txData.to || '',
+              amount: this.formatAmount(txData.value || '0'),
+              token: 'SEI',
+              hash: txData.hash || txHash,
+              gasUsed: txData.gasUsed || '0',
+              gasPrice: txData.gasPrice || '0',
+              blockNumber: Number(txData.blockNumber || blockNumber),
+              status: txData.status || 'success',
+              description: `Real ${this.determineTransactionType(txData)} transaction on SEI network`,
+              txHash: txData.hash || txHash,
+              blockHeight: Number(txData.blockNumber || blockNumber),
+              fee: this.calculateFee(txData.gasUsed || '0', txData.gasPrice || '0')
+            };
+            
+            events.push(event);
+            console.log(`✅ Added real transaction: ${event.hash}`);
+          }
+        } catch (txError) {
+          console.warn(`⚠️ Failed to fetch transaction ${hashesToFetch[i]}:`, txError);
+          // Continue with next transaction instead of failing completely
+        }
+      }
+      
+      console.log(`✅ Fetched ${events.length} real blockchain transactions from SEI network`);
       return events;
       
     } catch (error: any) {
@@ -343,34 +357,12 @@ class LegacySeiMcpClient {
       
       console.error('❌ Failed to fetch real blockchain data from MCP server:', error);
       
-      // Return empty array instead of mock data when MCP server fails
+      // Return empty array when MCP server fails - no fallback to mock data
       return [];
     }
   }
 
-  private determineTransactionType(tx: any): 'transfer' | 'mint' | 'swap' | 'contract' {
-    // Simple heuristics to determine transaction type
-    if (tx.data && tx.data !== '0x') {
-      return 'contract';
-    }
-    if (tx.value && tx.value !== '0') {
-      return 'transfer';
-    }
-    return 'transfer';
-  }
 
-  private calculateFee(gasUsed: any, gasPrice: any): string {
-    try {
-      const gas = BigInt(gasUsed || 0);
-      const price = BigInt(gasPrice || 0);
-      const fee = gas * price;
-      // Convert from wei to SEI (assuming 18 decimals)
-      const feeInSei = Number(fee) / Math.pow(10, 18);
-      return feeInSei.toFixed(6);
-    } catch {
-      return '0.001'; // Default fee
-    }
-  }
 
   private generateSeiAddress(): string {
     // Generate realistic SEI addresses (bech32 format)
@@ -389,31 +381,59 @@ class LegacySeiMcpClient {
     return address;
   }
 
-  private generateRealisticAmount(type: 'transfer' | 'mint' | 'swap' | 'contract'): string {
-    let baseAmount: number;
-    
+  // Helper methods for processing real transaction data
+  private determineTransactionType(txData: any): 'transfer' | 'mint' | 'swap' | 'contract' {
+    // Analyze transaction data to determine type
+    if (txData.to === null || txData.to === '') {
+      return 'contract'; // Contract creation
+    }
+    if (txData.input && txData.input !== '0x') {
+      // Has input data - likely a contract interaction
+      const inputData = txData.input.toLowerCase();
+      if (inputData.includes('a9059cbb')) return 'transfer'; // ERC20 transfer
+      if (inputData.includes('40c10f19')) return 'mint'; // Mint function
+      if (inputData.includes('7ff36ab5')) return 'swap'; // Swap function
+      return 'contract';
+    }
+    return 'transfer'; // Simple transfer
+  }
+
+  private formatAmount(value: string): string {
+    try {
+      // Convert wei to SEI (divide by 10^18)
+      const wei = BigInt(value || '0');
+      const sei = Number(wei) / Math.pow(10, 18);
+      return sei.toFixed(6);
+    } catch {
+      return '0.000000';
+    }
+  }
+
+  private calculateFee(gasUsed: string, gasPrice: string): string {
+    try {
+      const gas = BigInt(gasUsed || '0');
+      const price = BigInt(gasPrice || '0');
+      const feeWei = gas * price;
+      const feeSei = Number(feeWei) / Math.pow(10, 18);
+      return feeSei.toFixed(6);
+    } catch {
+      return '0.000000';
+    }
+  }
+
+  private generateRealisticAmount(type: string): string {
     switch (type) {
       case 'transfer':
-        // Typical transfer amounts: 0.1 to 1000 SEI
-        baseAmount = Math.random() * 1000 + 0.1;
-        break;
+        return (Math.random() * 1000 + 1).toFixed(6);
       case 'mint':
-        // Minting usually smaller amounts: 1 to 100 SEI
-        baseAmount = Math.random() * 100 + 1;
-        break;
+        return (Math.random() * 10000 + 100).toFixed(6);
       case 'swap':
-        // Swap amounts vary widely: 10 to 5000 SEI
-        baseAmount = Math.random() * 5000 + 10;
-        break;
+        return (Math.random() * 5000 + 10).toFixed(6);
       case 'contract':
-        // Contract interactions: 0.01 to 500 SEI
-        baseAmount = Math.random() * 500 + 0.01;
-        break;
+        return (Math.random() * 100 + 0.1).toFixed(6);
       default:
-        baseAmount = Math.random() * 100 + 1;
+        return (Math.random() * 100 + 1).toFixed(6);
     }
-    
-    return baseAmount.toFixed(6);
   }
 
   async getMarketData(symbol: string = 'SEI'): Promise<TokenInfo> {
