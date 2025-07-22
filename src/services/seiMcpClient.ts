@@ -209,73 +209,80 @@ class LegacySeiMcpClient {
     console.log(`🔍 Analyzing ${networkMode.toUpperCase()} wallet:`, address);
     
     try {
-      // Try to get balance with network parameter
-      const balance = await this.client.getBalance(address, networkMode);
+      // Use the new comprehensive wallet analysis tool from MCP server
+      console.log(`🔍 Fetching real blockchain data for ${networkMode.toUpperCase()} wallet:`, address);
       
-      // Generate realistic mock data based on network type
-      const mockTransactionCount = Math.floor(Math.random() * 100) + 1;
-      const mockRiskScore = Math.random() * 0.5; // Low to medium risk
-      const mockLastActivity = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString();
+      const walletAnalysis = await this.client.analyzeWallet(address, networkMode);
       
-      // Generate mock tokens based on network type
-      const mockTokens = isEVMAddress ? [
-        { denom: 'WSEI', amount: (Math.random() * 1000).toFixed(2), value: '$' + (Math.random() * 500).toFixed(2) },
-        { denom: 'USDC', amount: (Math.random() * 5000).toFixed(2), value: '$' + (Math.random() * 5000).toFixed(2) },
-        { denom: 'USDT', amount: (Math.random() * 3000).toFixed(2), value: '$' + (Math.random() * 3000).toFixed(2) }
-      ] : [
-        { denom: 'usei', amount: (Math.random() * 1000000).toFixed(0), value: '$' + (Math.random() * 500).toFixed(2) },
-        { denom: 'factory/sei1...', amount: (Math.random() * 50000).toFixed(0), value: '$' + (Math.random() * 200).toFixed(2) }
-      ];
-      
-      // Generate mock recent transactions
-      const mockRecentTransactions: BlockchainEvent[] = Array.from({ length: 3 }, (_, i) => ({
-        id: `tx_${Date.now()}_${i}`,
-        type: ['transfer', 'swap', 'contract'][Math.floor(Math.random() * 3)] as any,
-        timestamp: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString(),
-        from: isEVMAddress ? '0x' + Math.random().toString(16).substr(2, 40) : 'sei1' + Math.random().toString(36).substr(2, 39),
-        to: address,
-        amount: (Math.random() * 100).toFixed(2),
-        token: isEVMAddress ? ['WSEI', 'USDC', 'USDT'][Math.floor(Math.random() * 3)] : 'SEI',
-        hash: isEVMAddress 
-          ? '0x' + Math.random().toString(16).substr(2, 64)
-          : Array.from({ length: 64 }, () => '0123456789ABCDEF'[Math.floor(Math.random() * 16)]).join(''),
-        gasUsed: (Math.random() * 50000).toFixed(0),
-        gasPrice: (Math.random() * 0.1).toFixed(6),
-        blockNumber: Math.floor(Math.random() * 1000000) + 5000000,
-        status: 'success' as const,
-        description: `${isEVMAddress ? 'EVM' : 'Native'} transaction`,
-        fee: (Math.random() * 0.01).toFixed(4) + (isEVMAddress ? ' ETH' : ' SEI')
-      }));
-      
-      return {
-        address: balance.address || address,
-        balance: balance.balance?.formatted || `${(Math.random() * 1000).toFixed(2)} ${isEVMAddress ? 'ETH' : 'SEI'}`,
-        transactionCount: mockTransactionCount,
-        lastActivity: mockLastActivity,
-        riskScore: mockRiskScore,
-        tokens: balance.tokens || mockTokens,
-        recentTransactions: mockRecentTransactions
-      };
+      if (walletAnalysis && walletAnalysis.dataSource === 'real_blockchain_data') {
+        console.log('✅ Retrieved real blockchain data from MCP server');
+        
+        // Convert MCP server response to our WalletAnalysis format
+        const recentTransactions: BlockchainEvent[] = walletAnalysis.recentTransactions.map((tx: any, index: number) => ({
+          id: `real_tx_${tx.hash}_${index}`,
+          type: tx.type as 'transfer' | 'swap' | 'contract',
+          timestamp: tx.timestamp,
+          from: tx.from || address,
+          to: tx.to || address,
+          amount: parseFloat(tx.amount || '0').toFixed(6),
+          token: isEVMAddress ? 'SEI' : 'SEI',
+          hash: tx.hash,
+          gasUsed: '0',
+          gasPrice: '0',
+          blockNumber: 0,
+          status: 'success' as const,
+          description: `Real ${tx.type} transaction`,
+          fee: '0 SEI'
+        }));
+        
+        // Generate basic token holdings based on balance
+        const tokens = [];
+        if (walletAnalysis.balance && parseFloat(walletAnalysis.balance.formatted) > 0) {
+          tokens.push({
+            denom: isEVMAddress ? 'SEI' : 'usei',
+            amount: walletAnalysis.balance.formatted,
+            value: `$${(parseFloat(walletAnalysis.balance.formatted) * 0.5).toFixed(2)}` // Rough USD estimate
+          });
+        }
+        
+        return {
+          address: walletAnalysis.address,
+          balance: walletAnalysis.balance.formatted + ' SEI',
+          transactionCount: walletAnalysis.transactionCount,
+          lastActivity: walletAnalysis.lastActivity,
+          riskScore: walletAnalysis.riskScore,
+          tokens,
+          recentTransactions
+        };
+      } else {
+        // Fallback to basic balance check if comprehensive analysis fails
+        console.log('⚠️ Comprehensive analysis unavailable, using basic balance data');
+        const balance = await this.client.getBalance(address, networkMode);
+        
+        return {
+          address: balance.address || address,
+          balance: balance.balance?.formatted || '0 SEI',
+          transactionCount: 0,
+          lastActivity: null,
+          riskScore: 0.1,
+          tokens: balance.tokens || [],
+          recentTransactions: []
+        };
+      }
     } catch (error) {
       console.error(`Error analyzing ${networkMode} wallet:`, error);
       
-      // Return enhanced mock data as fallback with network-specific information
-      const fallbackBalance = isEVMAddress ? `${(Math.random() * 10).toFixed(4)} ETH` : `${(Math.random() * 1000).toFixed(2)} SEI`;
-      const fallbackTokens = isEVMAddress ? [
-        { denom: 'WSEI', amount: '0.00', value: '$0.00' },
-        { denom: 'USDC', amount: '0.00', value: '$0.00' }
-      ] : [
-        { denom: 'usei', amount: '0', value: '$0.00' }
-      ];
+      // Return minimal real data - no mock/fake information
+      console.log('⚠️ Unable to fetch real blockchain data, returning minimal response');
       
       return {
         address,
-        balance: fallbackBalance,
-        transactionCount: 0,
-        lastActivity: new Date().toISOString(),
-        riskScore: 0.1,
-        tokens: fallbackTokens,
-        recentTransactions: []
+        balance: '0 SEI', // Only show zero balance if we can't get real data
+        transactionCount: 0, // Real count: 0 if we can't fetch
+        lastActivity: null, // No fake timestamps
+        riskScore: 0.0, // No risk assessment without real data
+        tokens: [], // No fake token holdings
+        recentTransactions: [] // No fake transactions
       };
     }
   }

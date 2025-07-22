@@ -516,6 +516,15 @@ export class SeiMCPClient extends EventEmitter {
     return result.isContract || false;
   }
 
+  async analyzeWallet(address: string, network?: string): Promise<any> {
+    const result = await this.makeRequest('analyze_wallet', { 
+      address, 
+      network: network || this.config.network.network 
+    });
+    
+    return result;
+  }
+
   // Utility Methods
   private formatBalance(amount: string, denom: string): string {
     const num = parseFloat(amount);
