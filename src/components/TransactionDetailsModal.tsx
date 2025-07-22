@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Copy, ExternalLink } from 'lucide-react';
 import { type BlockchainEvent } from '@/services/seiMcpClient';
+import { formatDetailedTimestamp } from '@/utils/dateUtils';
 
 interface TransactionDetailsModalProps {
   transaction: BlockchainEvent | null;
@@ -158,7 +159,7 @@ const TransactionDetailsModal = ({ transaction, isOpen, onClose }: TransactionDe
 
           <div className="flex items-center justify-between">
             <span className="text-gray-400">Timestamp:</span>
-            <span className="text-white">{transaction.timestamp}</span>
+            <span className="text-white">{formatDetailedTimestamp(transaction.timestamp)}</span>
           </div>
 
           <div className="pt-4 border-t border-green-500/30">

@@ -1,4 +1,5 @@
 import { seiMcpClient, type WalletAnalysis, type MarketData } from './seiMcpClient';
+import { formatLastActivity } from '../utils/dateUtils';
 
 interface AIResponse {
   content: string;
@@ -66,7 +67,7 @@ export const generateAIResponse = async (query: string): Promise<AIResponse> => 
               : '• No recent transactions found';
             
             return {
-              content: `📊 **${networkMode} Wallet Analysis for ${address}**\n\n🌐 **Network Mode:** SEI ${networkMode}${isEVMAddress ? ' (EVM Compatible)' : ' (Cosmos SDK)'}\n💰 **Balance:** ${walletData.balance}\n📈 **Transactions:** ${walletData.transactionCount} total\n🛡️ **Risk Score:** ${(walletData.riskScore * 100).toFixed(1)}% (${riskLevel})\n⏰ **Last Activity:** ${walletData.lastActivity}\n\n🔍 **Recent Activity:**\n${recentActivity}\n\n📝 **Token Holdings:**\n${tokenHoldings}${!isLiveData ? '\n\n📝 **Note:** This analysis uses simulated data. Connect to live MCP server for real-time blockchain data.' : ''}\n\n🔗 **View on Explorer:** [SeiTrace](${explorerUrl})`,
+              content: `📊 **${networkMode} Wallet Analysis for ${address}**\n\n🌐 **Network Mode:** SEI ${networkMode}${isEVMAddress ? ' (EVM Compatible)' : ' (Cosmos SDK)'}\n💰 **Balance:** ${walletData.balance}\n📈 **Transactions:** ${walletData.transactionCount} total\n🛡️ **Risk Score:** ${(walletData.riskScore * 100).toFixed(1)}% (${riskLevel})\n⏰ **Last Activity:** ${formatLastActivity(walletData.lastActivity)}\n\n🔍 **Recent Activity:**\n${recentActivity}\n\n📝 **Token Holdings:**\n${tokenHoldings}${!isLiveData ? '\n\n📝 **Note:** This analysis uses simulated data. Connect to live MCP server for real-time blockchain data.' : ''}\n\n🔗 **View on Explorer:** [SeiTrace](${explorerUrl})`,
               confidence,
               sources: [dataSource, explorerUrl]
             };

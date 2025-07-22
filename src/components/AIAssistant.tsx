@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Brain, Send, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { generateAIResponse } from '@/services/aiService';
+import { formatChatTimestamp } from '@/utils/dateUtils';
 
 const suggestions = [
   "What has wallet sei1xy... done recently?",
@@ -28,7 +29,7 @@ const AIAssistant = () => {
     {
       type: 'assistant',
       content: "Hello! I'm your AI assistant connected to the SEI blockchain. I can analyze wallets, track tokens, monitor NFTs, assess risks, and provide real-time market insights. What would you like to know?",
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: formatChatTimestamp(new Date()),
       confidence: 1.0
     }
   ]);
@@ -52,7 +53,7 @@ const AIAssistant = () => {
     const userMessage: Message = {
       type: 'user',
       content: input,
-      timestamp: new Date().toLocaleTimeString()
+      timestamp: formatChatTimestamp(new Date())
     };
     
     setMessages(prev => [...prev, userMessage]);
@@ -64,7 +65,7 @@ const AIAssistant = () => {
       const assistantMessage: Message = {
         type: 'assistant',
         content: response.content,
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: formatChatTimestamp(new Date()),
         confidence: response.confidence,
         sources: response.sources
       };
@@ -76,7 +77,7 @@ const AIAssistant = () => {
       const errorMessage: Message = {
         type: 'assistant',
         content: "I apologize, but I'm having trouble connecting to the SEI chain data right now. Please try again in a moment.",
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: formatChatTimestamp(new Date()),
         confidence: 0.1
       };
       

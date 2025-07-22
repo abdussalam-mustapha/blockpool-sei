@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { seiMcpClient, type BlockchainEvent } from '@/services/seiMcpClient';
+import { formatTransactionTimestamp } from '@/utils/dateUtils';
 
 const LiveFeed = () => {
   const [feedItems, setFeedItems] = useState<BlockchainEvent[]>([]);
@@ -95,11 +96,7 @@ const LiveFeed = () => {
   };
 
   const formatTimestamp = (timestamp: string) => {
-    try {
-      return new Date(timestamp).toLocaleTimeString();
-    } catch {
-      return 'Invalid time';
-    }
+    return formatTransactionTimestamp(timestamp);
   };
 
   const formatAmount = (amount: string) => {
