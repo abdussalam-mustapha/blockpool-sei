@@ -396,46 +396,40 @@ class LegacySeiMcpClient {
     }
   }
 
-  async getNFTActivity(address?: string): Promise<any[]> {
+  async getNFTActivity(limit: number = 10): Promise<any[]> {
     await this.initPromise;
     
     try {
-      // Return mock NFT activity data
-      const defaultAddress = address || 'sei1example...';
-      return [
-        {
-          id: '1',
-          type: 'mint',
-          collection: 'SEI Punks',
-          tokenId: '#1234',
-          timestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-          price: (Math.random() * 10).toFixed(2) + ' SEI',
-          from: 'sei1...',
-          to: defaultAddress
-        },
-        {
-          id: '2',
-          type: 'transfer',
-          collection: 'SEI Apes',
-          tokenId: '#5678',
-          timestamp: new Date(Date.now() - Math.random() * 172800000).toISOString(),
-          price: '0 SEI',
-          from: defaultAddress,
-          to: 'sei1...'
-        },
-        {
-          id: '3',
-          type: 'sale',
-          collection: 'SEI Warriors',
-          tokenId: '#9999',
-          timestamp: new Date(Date.now() - Math.random() * 259200000).toISOString(),
-          price: (Math.random() * 50).toFixed(2) + ' SEI',
-          from: 'sei1seller...',
-          to: 'sei1buyer...'
-        }
-      ];
+      console.log('🎨 Fetching real-time NFT activity from MCP server...');
+      
+      // Get real NFT activity from MCP server
+      const nftActivityResult = await this.callMCPServer('get_nft_activity', { limit, network: 'sei' });
+      
+      if (nftActivityResult && Array.isArray(nftActivityResult)) {
+        console.log('🔥 Real NFT activity received from MCP server:', nftActivityResult.length, 'activities');
+        
+        // Transform the MCP server response to match expected format
+        return nftActivityResult.map((activity: any) => ({
+          id: activity.id || activity.txHash,
+          type: activity.type,
+          collection: activity.collection,
+          tokenId: activity.tokenId,
+          timestamp: activity.timestamp,
+          price: activity.price + ' SEI',
+          from: activity.from,
+          to: activity.to,
+          txHash: activity.txHash,
+          blockNumber: activity.blockNumber,
+          source: 'sei_blockchain'
+        }));
+      } else {
+        console.log('📭 No NFT activity found from MCP server');
+        return [];
+      }
     } catch (error) {
-      console.error('Error getting NFT activity:', error);
+      console.error('❌ Error getting real-time NFT activity from MCP server:', error);
+      
+      // Return empty array instead of mock data when MCP server unavailable
       return [];
     }
   }
