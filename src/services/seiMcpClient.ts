@@ -349,72 +349,49 @@ class LegacySeiMcpClient {
     }
     
     try {
-      // Try to get real market data from the client
-      // For now, return mock market data with proper structure
-      const mockTokens: TokenInfo[] = [
-        {
-          denom: 'SEI',
-          name: 'SEI',
-          symbol: 'SEI',
-          price: 0.45 + Math.random() * 0.1,
-          change24h: (Math.random() - 0.5) * 20,
-          volume24h: '$' + (Math.random() * 10000000).toFixed(0),
-          marketCap: '$' + (Math.random() * 1000000000).toFixed(0),
-          holders: Math.floor(Math.random() * 100000)
-        },
-        {
-          denom: 'WSEI',
-          name: 'Wrapped SEI',
-          symbol: 'WSEI',
-          price: 0.44 + Math.random() * 0.1,
-          change24h: (Math.random() - 0.5) * 15,
-          volume24h: '$' + (Math.random() * 5000000).toFixed(0),
-          marketCap: '$' + (Math.random() * 500000000).toFixed(0),
-          holders: Math.floor(Math.random() * 50000)
-        },
-        {
-          denom: 'USDC',
-          name: 'USD Coin',
-          symbol: 'USDC',
-          price: 1.0 + (Math.random() - 0.5) * 0.01,
-          change24h: (Math.random() - 0.5) * 2,
-          volume24h: '$' + (Math.random() * 20000000).toFixed(0),
-          marketCap: '$' + (Math.random() * 2000000000).toFixed(0),
-          holders: Math.floor(Math.random() * 200000)
-        }
-      ];
+      console.log('🔍 Fetching real-time market data from MCP server...');
       
-      return {
-        tokens: mockTokens,
-        totalMarketCap: '$' + (Math.random() * 5000000000).toFixed(0),
-        totalVolume24h: '$' + (Math.random() * 50000000).toFixed(0),
-        activePairs: Math.floor(Math.random() * 100) + 50,
-        seiPrice: 0.45 + Math.random() * 0.1,
-        seiChange24h: (Math.random() - 0.5) * 20,
-        marketCap: '$' + (Math.random() * 1000000000).toFixed(0),
-        volume24h: '$' + (Math.random() * 10000000).toFixed(0),
-        tvl: '$' + (Math.random() * 100000000).toFixed(0),
-        activeWallets: Math.floor(Math.random() * 50000) + 10000,
-        transactions24h: Math.floor(Math.random() * 100000) + 50000,
-        avgGas: (Math.random() * 0.01).toFixed(4) + ' SEI'
-      };
+      // Get real market data from MCP server
+      const marketDataResult = await this.callMCPServer('get_market_data', { network: 'sei' });
+      
+      if (marketDataResult && typeof marketDataResult === 'object') {
+        console.log('📊 Real market data received from MCP server:', marketDataResult);
+        
+        // Convert the MCP server response to our MarketData format
+        return {
+          tokens: marketDataResult.tokens || [],
+          totalMarketCap: marketDataResult.totalMarketCap || 'N/A',
+          totalVolume24h: marketDataResult.totalVolume24h || 'N/A',
+          activePairs: marketDataResult.activePairs || 0,
+          seiPrice: marketDataResult.seiPrice || 0,
+          seiChange24h: marketDataResult.seiChange24h || 0,
+          marketCap: marketDataResult.marketCap || 'N/A',
+          volume24h: marketDataResult.volume24h || 'N/A',
+          tvl: marketDataResult.tvl || 'N/A',
+          activeWallets: marketDataResult.activeWallets || 0,
+          transactions24h: marketDataResult.transactions24h || 0,
+          avgGas: marketDataResult.avgGas || 'N/A'
+        };
+      } else {
+        throw new Error('Invalid market data response from MCP server');
+      }
     } catch (error) {
-      console.error('Error getting market data:', error);
+      console.error('❌ Error getting real-time market data from MCP server:', error);
       
-      // Return fallback market data
+      // Return fallback market data with clear indication it's not real-time
       return {
         tokens: [],
-        totalMarketCap: 'N/A',
-        totalVolume24h: 'N/A',
+        totalMarketCap: 'N/A (MCP Server Unavailable)',
+        totalVolume24h: 'N/A (MCP Server Unavailable)',
         activePairs: 0,
         seiPrice: 0,
         seiChange24h: 0,
-        marketCap: 'N/A',
-        volume24h: 'N/A',
-        tvl: 'N/A',
+        marketCap: 'N/A (MCP Server Unavailable)',
+        volume24h: 'N/A (MCP Server Unavailable)',
+        tvl: 'N/A (MCP Server Unavailable)',
         activeWallets: 0,
         transactions24h: 0,
-        avgGas: 'N/A'
+        avgGas: 'N/A (MCP Server Unavailable)'
       };
     }
   }
