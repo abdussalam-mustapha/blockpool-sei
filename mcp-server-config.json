@@ -1,0 +1,171 @@
+{
+  "name": "blockpool-sei-mcp-server",
+  "version": "1.0.0",
+  "description": "SEI MCP Server configuration for Blockpool project",
+  "server": {
+    "name": "Blockpool SEI MCP Server",
+    "version": "1.0.0"
+  },
+  "capabilities": {
+    "resources": {},
+    "tools": {
+      "wallet_balance": {
+        "description": "Get wallet balance for SEI addresses",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "address": {
+              "type": "string",
+              "description": "SEI wallet address (bech32 or EVM format)"
+            }
+          },
+          "required": ["address"]
+        }
+      },
+      "wallet_transactions": {
+        "description": "Get transaction history for a wallet",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "address": {
+              "type": "string",
+              "description": "SEI wallet address"
+            },
+            "limit": {
+              "type": "number",
+              "description": "Number of transactions to fetch",
+              "default": 10
+            }
+          },
+          "required": ["address"]
+        }
+      },
+      "analyze_wallet": {
+        "description": "Comprehensive wallet analysis including balance, transactions, and behavior patterns",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "address": {
+              "type": "string",
+              "description": "SEI wallet address to analyze"
+            },
+            "timeframe": {
+              "type": "string",
+              "enum": ["hour", "day", "week", "month", "year", "all"],
+              "description": "Analysis timeframe",
+              "default": "week"
+            }
+          },
+          "required": ["address"]
+        }
+      },
+      "get_latest_block": {
+        "description": "Get latest block information from SEI network",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      "get_chain_info": {
+        "description": "Get SEI chain information and network status",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      "get_market_data": {
+        "description": "Get SEI token market data and pricing information",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "symbol": {
+              "type": "string",
+              "description": "Token symbol (default: SEI)",
+              "default": "SEI"
+            }
+          }
+        }
+      },
+      "get_transaction": {
+        "description": "Get detailed transaction information by hash",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "hash": {
+              "type": "string",
+              "description": "Transaction hash"
+            }
+          },
+          "required": ["hash"]
+        }
+      },
+      "get_recent_events": {
+        "description": "Get recent blockchain events and transactions",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "number",
+              "description": "Number of events to fetch",
+              "default": 10
+            }
+          }
+        }
+      }
+    },
+    "prompts": {}
+  },
+  "transport": {
+    "type": "http",
+    "host": "0.0.0.0",
+    "port": 3001,
+    "cors": {
+      "origin": true,
+      "credentials": false,
+      "allowedHeaders": [
+        "Content-Type",
+        "Authorization",
+        "X-Session-ID",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers"
+      ]
+    }
+  },
+  "environment": {
+    "SEI_RPC_URL": "https://sei-rpc.polkachu.com",
+    "SEI_REST_URL": "https://sei-api.polkachu.com",
+    "COINGECKO_API_URL": "https://api.coingecko.com/api/v3",
+    "DEBUG": false,
+    "RATE_LIMIT_REQUESTS_PER_MINUTE": 120,
+    "CACHE_TTL_SECONDS": 30
+  },
+  "endpoints": {
+    "health": "/health",
+    "sse": "/sse",
+    "messages": "/messages",
+    "api": "/api/mcp"
+  },
+  "client_configurations": {
+    "windsurf": {
+      "url": "http://localhost:3001/sse",
+      "description": "Local development configuration for Windsurf IDE"
+    },
+    "production": {
+      "url": "https://sei-mcp-server-1.onrender.com/sse",
+      "description": "Production configuration for deployed server"
+    }
+  },
+  "tools_documentation": {
+    "wallet_balance": "Fetches real-time balance for SEI wallet addresses. Supports both bech32 (sei1...) and EVM (0x...) formats.",
+    "wallet_transactions": "Retrieves transaction history with optional limit. Returns detailed transaction data including amounts, fees, and timestamps.",
+    "analyze_wallet": "Comprehensive analysis including balance, transaction patterns, risk assessment, and behavioral insights.",
+    "get_latest_block": "Returns current block height, timestamp, and recent transaction count from SEI network.",
+    "get_chain_info": "Network status, chain ID, validator information, and overall health metrics.",
+    "get_market_data": "Real-time pricing, market cap, volume, and trading data for SEI token.",
+    "get_transaction": "Detailed transaction lookup by hash including status, participants, and execution details.",
+    "get_recent_events": "Stream of recent blockchain events including transfers, swaps, and contract interactions."
+  }
+}

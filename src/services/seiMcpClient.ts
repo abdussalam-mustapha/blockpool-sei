@@ -438,47 +438,68 @@ class LegacySeiMcpClient {
     await this.initPromise;
     
     try {
-      // Return mock risk analysis data
-      const riskScore = Math.random() * 100;
-      let riskLevel = 'Low';
-      if (riskScore > 70) riskLevel = 'High';
-      else if (riskScore > 40) riskLevel = 'Medium';
+      console.log('🛡️ Fetching real-time risk analysis from MCP server...');
       
-      return {
-        address,
-        riskScore: Math.round(riskScore),
-        riskLevel,
-        factors: [
-          {
-            factor: 'Transaction Volume',
-            score: Math.round(Math.random() * 100),
-            description: 'Based on transaction frequency and amounts'
-          },
-          {
-            factor: 'Wallet Age',
-            score: Math.round(Math.random() * 100),
-            description: 'Account creation date and activity history'
-          },
-          {
-            factor: 'Token Diversity',
-            score: Math.round(Math.random() * 100),
-            description: 'Variety of tokens held and traded'
-          }
-        ],
-        recommendations: [
-          'Monitor large transactions',
-          'Verify counterparty addresses',
-          'Use secure wallet practices'
-        ]
-      };
+      // Get real risk analysis from MCP server using analyze_wallet tool
+      const walletAnalysisResult = await this.callMCPServer('analyze_wallet', { address, network: 'sei' });
+      
+      if (walletAnalysisResult && walletAnalysisResult.riskScore !== undefined) {
+        console.log('📊 Real risk analysis received from MCP server:', walletAnalysisResult.riskScore);
+        
+        // Convert risk score to percentage and determine level
+        const riskScore = Math.round(walletAnalysisResult.riskScore * 100);
+        let riskLevel = 'Low';
+        if (riskScore > 70) riskLevel = 'High';
+        else if (riskScore > 40) riskLevel = 'Medium';
+        
+        return {
+          address,
+          riskScore,
+          riskLevel,
+          factors: [
+            {
+              factor: 'Transaction Volume',
+              score: Math.min(95, walletAnalysisResult.transactionCount || 0),
+              description: `Based on ${walletAnalysisResult.transactionCount || 0} total transactions`
+            },
+            {
+              factor: 'Wallet Activity',
+              score: walletAnalysisResult.lastActivity ? 85 : 20,
+              description: walletAnalysisResult.lastActivity ? 'Recent activity detected' : 'No recent activity'
+            },
+            {
+              factor: 'Balance Risk',
+              score: Math.min(90, Math.round((parseFloat(walletAnalysisResult.balance?.formatted || '0') / 1000) * 10)),
+              description: `Based on current balance: ${walletAnalysisResult.balance?.formatted || '0 SEI'}`
+            }
+          ],
+          recommendations: [
+            riskScore > 50 ? 'Exercise caution with this wallet' : 'Standard security practices apply',
+            'Verify all transaction details before proceeding',
+            'Monitor for unusual activity patterns'
+          ],
+          source: 'real_blockchain_data'
+        };
+      } else {
+        console.log('📭 No risk analysis data found from MCP server');
+        return {
+          address,
+          riskScore: 0,
+          riskLevel: 'Unknown',
+          factors: [],
+          recommendations: ['Unable to analyze - insufficient data'],
+          source: 'mcp_server_unavailable'
+        };
+      }
     } catch (error) {
-      console.error('Error getting risk analysis:', error);
+      console.error('❌ Error getting real-time risk analysis from MCP server:', error);
       return {
         address,
         riskScore: 0,
         riskLevel: 'Unknown',
         factors: [],
-        recommendations: []
+        recommendations: ['Analysis unavailable - MCP server error'],
+        source: 'error'
       };
     }
   }

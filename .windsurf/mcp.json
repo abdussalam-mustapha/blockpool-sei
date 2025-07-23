@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "blockpool-sei-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sei-protocol/sei-mcp-server"
+      ],
+      "env": {
+        "SEI_RPC_URL": "https://sei-rpc.polkachu.com",
+        "PORT": "3001"
+      }
+    },
+    "blockpool-sei-http": {
+      "url": "https://sei-mcp-server-1.onrender.com/sse",
+      "description": "Production MCP server for Blockpool with HTTP/SSE connection"
+    },
+    "blockpool-sei-local": {
+      "url": "http://localhost:3001/sse",
+      "description": "Local development MCP server for Blockpool"
+    }
+  }
+}

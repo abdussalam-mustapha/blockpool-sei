@@ -517,12 +517,11 @@ export class SeiMCPClient extends EventEmitter {
   }
 
   async analyzeWallet(address: string, network?: string): Promise<any> {
-    const result = await this.makeRequest('analyze_wallet', { 
-      address, 
-      network: network || this.config.network.network 
-    });
-    
-    return result;
+    return this.makeRequest('analyze_wallet', { address, network });
+  }
+
+  async getMarketData(symbol: string = 'SEI'): Promise<any> {
+    return this.makeRequest('get_market_data', { symbol });
   }
 
   // Utility Methods
@@ -572,7 +571,7 @@ export class SeiMCPClient extends EventEmitter {
 
 // Singleton instance
 export const seiMcpClient = new SeiMCPClient({
-  debug: process.env.NODE_ENV === 'development',
+  debug: import.meta.env.DEV || false,
 });
 
 // Auto-connect when module loads
