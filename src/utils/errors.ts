@@ -1,5 +1,5 @@
 /**
- * Professional Error Handling Classes for SEI Chain Pulse
+ * Professional Error Handling Classes for Blockpool
  * Provides transparent error reporting and user-friendly messages
  */
 
@@ -38,7 +38,7 @@ export interface ErrorContext {
 }
 
 /**
- * Base class for all SEI Chain Pulse errors
+ * Base class for all Blockpool errors
  */
 export abstract class SEIChainError extends Error {
   public readonly code: ErrorCode;

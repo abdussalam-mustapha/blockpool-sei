@@ -1,5 +1,5 @@
 /**
- * Advanced Query Parser for SEI Chain Pulse
+ * Advanced Query Parser for Blockpool
  * Extracts structured data from natural language queries
  */
 

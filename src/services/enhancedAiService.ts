@@ -1,5 +1,5 @@
 /**
- * Enhanced AI Service for SEI Chain Pulse
+ * Enhanced AI Service for Blockpool
  * Integrates advanced query parsing, tool-based architecture, and professional error handling
  */
 
@@ -331,7 +331,7 @@ export class EnhancedAIService {
    * Handle help queries
    */
   private handleHelp(query: string, parsedQuery: ParsedQuery): AIResponse {
-    const response = `🤖 **SEI Chain Pulse AI Assistant**\n\n` +
+    const response = `🤖 **Blockpool AI Assistant**\n\n` +
       `I can help you analyze the SEI blockchain! Here's what I can do:\n\n` +
       `## 🔍 **Wallet Analysis**\n` +
       `• \`Analyze wallet sei1abc123...\`\n` +

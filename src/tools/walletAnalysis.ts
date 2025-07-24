@@ -1,5 +1,5 @@
 /**
- * Advanced Wallet Analysis Tool for SEI Chain Pulse
+ * Advanced Wallet Analysis Tool for Blockpool
  * Inspired by SEI Sorcerer's implementation with enhanced features
  */
 
