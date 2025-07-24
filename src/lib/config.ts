@@ -5,6 +5,40 @@ export type SupportedNetwork =
   // SEI EVM Mode (same networks but accessing EVM functionality)
   | 'sei-evm' | 'sei-testnet-evm' | 'sei-devnet-evm';
 
+// SEI RPC endpoint pools for load balancing and failover
+export const SEI_RPC_ENDPOINTS = {
+  mainnet: {
+    native: ['https://sei.drpc.org', 'https://rpc.sei-apis.com'],
+    evm: [
+      'https://evm-rpc.sei-apis.com',
+      'https://sei-evm-rpc.stakeme.pro',
+      'https://node.histori.xyz/sei-mainnet/8ry9f6t9dct1se2hlagxnd9n2a',
+      'https://sei.drpc.org'
+    ]
+  },
+  testnet: {
+    native: ['https://rpc-testnet.sei-apis.com'],
+    evm: ['https://evm-rpc-testnet.sei-apis.com']
+  },
+  devnet: {
+    native: ['https://rpc-arctic-1.sei-apis.com'],
+    evm: ['https://evm-rpc-arctic-1.sei-apis.com']
+  }
+};
+
+// WebSocket endpoints for real-time data
+export const SEI_WS_ENDPOINTS = {
+  mainnet: {
+    evm: ['wss://evm-ws.sei-apis.com', 'wss://sei.drpc.org']
+  },
+  testnet: {
+    evm: ['wss://evm-ws-testnet.sei-apis.com']
+  },
+  devnet: {
+    evm: ['wss://evm-ws-arctic-1.sei-apis.com']
+  }
+};
+
 // Network configuration
 export interface NetworkConfig {
   name: string;
@@ -46,7 +80,7 @@ export const NETWORK_CONFIGS: Record<SupportedNetwork, NetworkConfig> = {
   'sei': {
     name: 'SEI Network',
     chainId: 1329,
-    rpcUrl: 'https://rpc.sei-apis.com',
+    rpcUrl: 'https://sei.drpc.org',
     explorerUrl: 'https://seitrace.com',
     nativeCurrency: { name: 'SEI', symbol: 'SEI', decimals: 6 },
     type: 'sei',
@@ -221,6 +255,56 @@ export function createMCPConfig(overrides?: Partial<MCPClientConfig>): MCPClient
       ...overrides?.rateLimit,
     },
   };
+}
+
+/**
+ * Get all available RPC URLs for a network (for failover)
+ * @param network The network to get RPC URLs for
+ * @returns Array of RPC URLs for the specified network
+ */
+export function getRpcUrlPool(network: SupportedNetwork): string[] {
+  const isEVM = isEVMMode(network);
+  const networkType = network.includes('testnet') ? 'testnet' : 
+                     network.includes('devnet') ? 'devnet' : 'mainnet';
+  
+  if (isEVM) {
+    return SEI_RPC_ENDPOINTS[networkType as keyof typeof SEI_RPC_ENDPOINTS].evm;
+  } else {
+    return SEI_RPC_ENDPOINTS[networkType as keyof typeof SEI_RPC_ENDPOINTS].native;
+  }
+}
+
+/**
+ * Get WebSocket endpoint for a network
+ * @param network The network to get WebSocket URL for
+ * @returns WebSocket URL for the specified network (EVM only)
+ */
+export function getWebSocketUrl(network: SupportedNetwork): string | null {
+  if (!isEVMMode(network)) {
+    return null; // WebSocket only available for EVM mode
+  }
+  
+  const networkType = network.includes('testnet') ? 'testnet' : 
+                     network.includes('devnet') ? 'devnet' : 'mainnet';
+  
+  const endpoints = SEI_WS_ENDPOINTS[networkType as keyof typeof SEI_WS_ENDPOINTS].evm;
+  return endpoints[0]; // Return primary WebSocket endpoint
+}
+
+/**
+ * Get all available WebSocket URLs for a network (for failover)
+ * @param network The network to get WebSocket URLs for
+ * @returns Array of WebSocket URLs for the specified network (EVM only)
+ */
+export function getWebSocketUrlPool(network: SupportedNetwork): string[] {
+  if (!isEVMMode(network)) {
+    return []; // WebSocket only available for EVM mode
+  }
+  
+  const networkType = network.includes('testnet') ? 'testnet' : 
+                     network.includes('devnet') ? 'devnet' : 'mainnet';
+  
+  return SEI_WS_ENDPOINTS[networkType as keyof typeof SEI_WS_ENDPOINTS].evm;
 }
 
 // Legacy compatibility - will be deprecated

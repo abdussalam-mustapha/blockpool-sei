@@ -58,7 +58,7 @@ export const useWallet = () => {
   const getBalance = async (address: string): Promise<string> => {
     try {
       // Use SEI RPC endpoint to get balance
-      const response = await fetch('https://sei-rpc.polkachu.com/abci_query?path="/cosmos.bank.v1beta1.Query/Balance"&data=0x' + 
+      const response = await fetch('https://sei.drpc.org/abci_query?path="/cosmos.bank.v1beta1.Query/Balance"&data=0x' + 
         Buffer.from(JSON.stringify({
           address: address,
           denom: 'usei'

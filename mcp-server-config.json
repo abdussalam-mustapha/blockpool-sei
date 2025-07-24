@@ -135,8 +135,8 @@
     }
   },
   "environment": {
-    "SEI_RPC_URL": "https://sei-rpc.polkachu.com",
-    "SEI_REST_URL": "https://sei-api.polkachu.com",
+    "SEI_RPC_URL": "https://sei.drpc.org",
+    "SEI_REST_URL": "https://sei.drpc.org",
     "COINGECKO_API_URL": "https://api.coingecko.com/api/v3",
     "DEBUG": false,
     "RATE_LIMIT_REQUESTS_PER_MINUTE": 120,

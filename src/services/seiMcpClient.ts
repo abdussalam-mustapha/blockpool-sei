@@ -1021,7 +1021,7 @@ class LegacySeiMcpClient {
     
     try {
       // SEI mainnet RPC endpoint
-      const rpcUrl = 'https://rpc.sei-apis.com';
+      const rpcUrl = 'https://sei.drpc.org';
       
       // Get latest block
       const latestBlockResponse = await fetch(rpcUrl + '/block', {
