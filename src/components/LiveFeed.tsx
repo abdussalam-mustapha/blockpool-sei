@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { seiMcpClient, type BlockchainEvent } from '@/services/seiMcpClient';
+import { telegramAlerts, type Transaction } from '@/services/telegramAlerts';
 import { formatTransactionTimestamp } from '@/utils/dateUtils';
 
 const LiveFeed = () => {
@@ -14,6 +15,35 @@ const LiveFeed = () => {
   
   // Simple constants - no chunking, no pagination
   const MAX_ITEMS = 10; // Only show 10 most recent items
+
+  // Function to check events for alerts
+  const checkEventsForAlerts = async (events: BlockchainEvent[]) => {
+    if (!events || events.length === 0) return;
+    
+    console.log(`🔍 LiveFeed: Checking ${events.length} events for alerts...`);
+    
+    for (const event of events) {
+      try {
+        // Convert BlockchainEvent to Transaction format for alert checking
+        const transaction: Transaction = {
+          hash: event.hash || event.txHash || event.id || 'unknown',
+          from: event.from || 'unknown',
+          to: event.to || 'unknown',
+          value: parseFloat(event.amount || '0'),
+          amount: parseFloat(event.amount || '0'),
+          token: event.token || 'SEI',
+          type: event.type || 'transfer',
+          timestamp: typeof event.timestamp === 'string' ? new Date(event.timestamp).getTime() : Date.now(),
+          blockNumber: event.blockNumber || event.blockHeight
+        };
+        
+        // Check this transaction against alert rules
+        await telegramAlerts.checkAlerts(transaction);
+      } catch (error) {
+        console.error('❌ LiveFeed: Error checking event for alerts:', error, event);
+      }
+    }
+  };
 
   // Enhanced function to load data with better connection handling
   const loadInitialData = async () => {
@@ -33,6 +63,9 @@ const LiveFeed = () => {
         setFeedItems(events);
         setConnectionStatus('connected');
         console.log(`✅ LiveFeed: Loaded ${events.length} blockchain events`);
+        
+        // Check each new event for alerts
+        await checkEventsForAlerts(events);
       } else {
         // Even if no events, don't show error if MCP client is working
         // (empty blocks are normal in blockchain)
@@ -44,6 +77,9 @@ const LiveFeed = () => {
         if (mockEvents && mockEvents.length > 0) {
           setFeedItems(mockEvents);
           console.log('📋 LiveFeed: Using mock data while waiting for real transactions');
+          
+          // Check mock events for alerts too (for testing)
+          await checkEventsForAlerts(mockEvents);
         }
       }
     } catch (error) {
@@ -56,6 +92,9 @@ const LiveFeed = () => {
           setFeedItems(mockEvents);
           setConnectionStatus('connecting'); // Show as connecting, not error
           console.log('📋 LiveFeed: Using mock data due to connection issues');
+          
+          // Check mock events for alerts
+          await checkEventsForAlerts(mockEvents);
         } else {
           setConnectionStatus('error');
         }
