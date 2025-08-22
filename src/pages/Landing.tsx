@@ -32,8 +32,8 @@ const Landing = () => {
     },
     {
       icon: <Bot className="h-6 w-6" />,
-      title: "AI-Powered Analytics",
-      description: "Advanced AI assistant providing intelligent insights, risk analysis, and wallet behavior patterns."
+      title: "AI-Powered Automation",
+      description: "Advanced AI assistant and agents providing intelligent insights, risk analysis, and wallet behavior patterns."
     },
     {
       icon: <Shield className="h-6 w-6" />,
@@ -80,7 +80,7 @@ const Landing = () => {
                 <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent">
                   Blockpool
                 </h1>
-                <p className="text-xs md:text-sm text-green-400/70 hidden sm:block">Advanced Blockchain Analytics</p>
+                <p className="text-xs md:text-sm text-green-400/70 hidden sm:block">Advanced Blockchain Automation</p>
               </div>
             </div>
             <Button 
@@ -105,12 +105,12 @@ const Landing = () => {
           
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-white via-green-400 to-green-500 bg-clip-text text-transparent leading-tight">
             <span className="block">Next-Gen Blockchain</span>
-            <span className="block text-green-400">Analytics Platform</span>
+            <span className="block text-green-400">Automation Platform</span>
           </h1>
           
           <p className="text-base md:text-xl text-gray-300 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed px-4">
             Unlock the power of SEI blockchain with real-time monitoring, AI-driven insights, 
-            and comprehensive analytics. Make informed decisions with live data at your fingertips.
+            comprehensive analytics snd Automation. Make informed decisions with live data at your fingertips.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-4">

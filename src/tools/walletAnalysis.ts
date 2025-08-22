@@ -1,6 +1,5 @@
 /**
  * Advanced Wallet Analysis Tool for Blockpool
- * Inspired by SEI Sorcerer's implementation with enhanced features
  */
 
 import { z } from 'zod';
