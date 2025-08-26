@@ -2,7 +2,7 @@
   <img src="public/blockpool-logo.svg" alt="Blockpool Logo" width="120"/>
 </p>
 
-# 🔷 Blockpool: AI-Powered Blockchain Analytics Dashboard
+# 🔷 Blockpool: AI-Powered Blockchain Automation and analytics tool
 
 **Blockpool** is an intelligent blockchain analytics platform that provides real-time monitoring, AI-powered insights, and comprehensive wallet analysis for the SEI ecosystem and EVM-compatible networks.
 
